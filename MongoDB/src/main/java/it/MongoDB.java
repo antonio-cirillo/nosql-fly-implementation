@@ -13,6 +13,7 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
@@ -37,15 +38,7 @@ public class MongoDB {
 		
 		System.out.println("There are " + collection.countDocuments() + " element(s) insiede " + 
 				database.getName() + " database.");
-		
-		cursor = collection.find().cursor();
-		try {
-			for(int i = 1; cursor.hasNext(); i++)
-				System.out.println(i + ": " + cursor.next().toJson());
-		} finally {
-			cursor.close();
-		}
-		
+				
 		FindIterable <Document> query =	collection.find().
 				projection(Projections.fields(Projections.include(features[3]), Projections.excludeId()));
 		
@@ -66,6 +59,17 @@ public class MongoDB {
 		System.out.println("The average temperature is: " + temperatureAverage);
 		System.out.println("The maximum temperature is: " + temperatureMax);
 		System.out.println("The minimum temperature is: " + temperatureMin);
+				
+		System.out.println("Record when temperature is equal orless than 8.0, and equal or great then 5.0.");
+		query = collection.find(Filters.and(
+			Filters.gte(features[3], "5.0"), Filters.lte(features[3], "8.0")));
+		cursor = query.iterator();
+		try {
+			for(int i = 0; cursor.hasNext(); i++)
+				System.out.println(i + ": " + cursor.next().toJson());
+		} finally {
+			cursor.close();
+		}
 		
 	}	
 	
@@ -90,7 +94,6 @@ public class MongoDB {
 	public static Document document;
 	public static MongoCollection <Document> collection;
 	public static MongoCursor <Document> cursor;
-	
 	public static final int MAX_ITEMS = 100;
 	public static final String[] features = {"Formatted Date", "Summary", "Precip Type", "Temperature (C)", "Apparent Temperature (C)",
             "Humidity", "Wind Speed (km/h)", "Wind Bearing (degrees)", "Visibility (km),Loud Cover", 
