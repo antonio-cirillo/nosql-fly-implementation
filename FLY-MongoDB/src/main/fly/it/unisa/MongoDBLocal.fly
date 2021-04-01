@@ -1,0 +1,7 @@
+var nosql = [type = "nosql", client = "", database = "mydb", collection = "weather"]
+
+var pathOfCSV = "/home/devcirillo/Documenti/GitHub/nosql-fly-implementation/FLY-MongoDB/weatherHistory.csv"
+
+var weatherCSV = [type = "file", path = pathOfCSV, ext = "csv"]
+
+nosql.insert(weatherCSV, 150)
