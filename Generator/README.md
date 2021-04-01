@@ -1,6 +1,7 @@
 ### Inside compileJava function
 ```
 import com.mongodb.client.*;
+import org.bson.*;
 ```
 ### Inside generateVariableDeclaration function
 ```
@@ -12,7 +13,7 @@ case "nosql":{
 	MongoClient «dec.name» = MongoClients.create();
 	MongoDatabase «dec.name»_«database» = «dec.name».getDatabase("«database»");
 	«IF !(collection.nullOrEmpty)»
-	MongoCollection «collection» = «dec.name»_«database».getCollection(«collection»);
+	MongoCollection <Document> «collection» = «dec.name»_«database».getCollection(«collection»);
 	«ENDIF»
 	'''
 }
