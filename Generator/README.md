@@ -39,6 +39,17 @@ case "nosql":{
 		«ENDIF»
 		'''
 	}
+	
+case "query-nosql":{
+		var connection = ((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_f.name
+		return '''
+			QueryConverter «dec.name» = new QueryConverter.Builder().sqlString(«IF 
+			((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s.nullOrEmpty
+			»«((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f.name»
+			« ELSE »"«((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s»"«ENDIF»).build();
+			MongoDBQueryHolder «dec.name»Holder = «dec.name».getMongoQuery();
+		'''
+	}
 ```
 ### Inside generateVariableFunction
 ```
@@ -75,6 +86,11 @@ case "nosql":{
 		}
 	}
 ```
+### Inside valuateArithmeticExpression
+```
+else if(type.equals("query-nosql")) {
+	return "Table"
+```
 ### Inside pom.xml
 ```
 <dependency>
@@ -93,8 +109,13 @@ case "nosql":{
     	<version>1.7.13</version>
 </dependency>
 <dependency>
-    <groupId>org.slf4j</groupId>
-    <artifactId>slf4j-log4j12</artifactId>
-    <version>1.7.13</version>
+    	<groupId>org.slf4j</groupId>
+    	<artifactId>slf4j-log4j12</artifactId>
+    	<version>1.7.13</version>
+</dependency>
+<dependency>
+   	<groupId>com.github.vincentrussell</groupId>
+   	<artifactId>sql-to-mongo-db-query-converter</artifactId>
+   	<version>1.18</version>
 </dependency>
 ```
