@@ -5,3 +5,5 @@ var pathOfCSV = "/home/devcirillo/Documenti/GitHub/nosql-fly-implementation/FLY-
 var weatherCSV = [type = "file", path = pathOfCSV, ext = "csv"]
 
 nosql.insert(weatherCSV, 150) 
+
+var query = [type = "query-nosql", collection = nosql, statement = "SELECT * FROM weather"]
