@@ -118,8 +118,6 @@ case "query":{
 			»«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»
 			« ELSE »"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«ENDIF»).build();
 			MongoDBQueryHolder «dec.name»Holder = «dec.name».getMongoQuery();
-			MongoCursor <Document> «dec.name»Cursor = 
-				«connection»_«database»_«collection».find(«dec.name»Holder.getQuery().toBsonDocument()).cursor();
 		'''
 	}
 }
@@ -140,24 +138,27 @@ if (expression.target.right instanceof DeclarationObject) {
 		case "query":{
 			if(expression.feature.equals("execute")){
 				var queryType = (expression.target.right as DeclarationObject).features.get(1).value_s
-				var connection = (((expression.target.right as DeclarationObject)
-					.features.get(2) as DeclarationFeature).value_f as VariableDeclaration).right as DeclarationObject
-				var databaseType = connection.features.get(0).value_s
+				var connection = (((expression.target.right as DeclarationObject).features.get(2) as DeclarationFeature)
+					.value_f as VariableDeclaration)
+				var databaseType = (connection.right as DeclarationObject).features.get(0).value_s
 				if(databaseType.equals("sql")) {
 					if(queryType.equals("update")){
 						return '''«(expression.target as VariableDeclaration).name».executeUpdate();'''
 					} else if(queryType.equals("value")){
 						return '''Table.read().db(
-							«(expression.target as VariableDeclaration).name».executeQuery()
-							).printAll().replaceAll("[^\\d.]+|\\.(?!\\d)", "");'''
+						«(expression.target as VariableDeclaration).name».executeQuery()
+						).printAll().replaceAll("[^\\d.]+|\\.(?!\\d)", "");'''
 					} else {
 						return '''Table.read().db(
-							«(expression.target as VariableDeclaration).name».executeQuery()
-							);'''
+						«(expression.target as VariableDeclaration).name».executeQuery()
+						);'''
 					}
 				} else if(databaseType.equals("nosql")){
+					var database = (connection.right as DeclarationObject).features.get(2).value_s
+					var collection = (connection.right as DeclarationObject).features.get(3).value_s
 					if(queryType.equals("select")) {
-						return '''__generateTableFromNoSQLQuery(«(expression.target as VariableDeclaration).name»Cursor)'''
+						return '''__generateTableFromNoSQLQuery(«connection.name»_«database»_
+							«collection».find(«expression.target.name»Holder.getQuery().toBsonDocument()).cursor())'''
 					}
 				}
 			}
