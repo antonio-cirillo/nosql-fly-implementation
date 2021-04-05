@@ -6,4 +6,9 @@ var weatherCSV = [type = "file", path = pathOfCSV, ext = "csv"]
 
 nosql.insert(weatherCSV, 150) 
 
-var query = [type = "query-nosql", collection = nosql, statement = "SELECT * FROM weather"]
+var query = [type = "query", query_type = "select", collection = nosql,
+	statement = "SELECT * FROM weather WHERE 'Temperature (C)' > '5' AND 'Temperature (C)' < '6'"]
+	
+var result = query.execute()
+
+println result
