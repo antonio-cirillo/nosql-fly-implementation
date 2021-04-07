@@ -1,10 +1,16 @@
+// var path = "log4j.properties"
+// var nosql = [type = "nosql", client = "", database = "mydb", collection = "weather", path = path]
+
 var nosql = [type = "nosql", client = "", database = "mydb", collection = "weather"]
 
 var pathOfCSV = "/home/devcirillo/Documenti/GitHub/nosql-fly-implementation/FLY-MongoDB/weatherHistory.csv"
 
 var weatherCSV = [type = "file", path = pathOfCSV, ext = "csv"]
 
-nosql.insert(weatherCSV, 150) 
+var insert = [type = "query", query_type = "insert", collection = nosql, 
+	statement = weatherCSV]
+
+insert.execute()
 
 var query = [type = "query", query_type = "select", collection = nosql,
 	statement = "{'$and': [{'Temperature (C)': {'$gt': '5'}}, {'Temperature (C)': {'$lt': '6'}}]}"]
@@ -12,3 +18,9 @@ var query = [type = "query", query_type = "select", collection = nosql,
 var result = query.execute()
 
 println result
+
+var query_2 = [type = "query", query_type = "delete", collection = nosql, statement = "{ }"]
+
+var result_2 = query_2.execute()
+
+if(result_2) println "Collection dropped"
