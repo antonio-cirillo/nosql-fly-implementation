@@ -55,46 +55,54 @@ case "nosql":{
 	// var client = ((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
 	var database = ((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
 	var collection = ((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s
-	return '''
-	try {
-		Properties props = new Properties();
-		props.put("log4j.rootLogger", "INFO, stdout");
-		props.put("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");
-		props.put("log4j.appender.stdout.Target", "System.out");
-		props.put("log4j.appender.stdout.layout", "org.apache.log4j.PatternLayout");
-		props.put("log4j.appender.stdout.layout.ConversionPattern", "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n");
-		FileOutputStream outputStream = new FileOutputStream("log4j.properties");
-		props.store(outputStream, "This is a default properties file");
-		System.out.println("Default properties file created.");
-	} catch (IOException e) {
-		System.out.println("Default properties file not created.");
-		e.printStackTrace();
+	if((dec.right as DeclarationObject).features.size() < 5) {
+		return '''
+		try {
+			Properties props = new Properties();
+			props.put("log4j.rootLogger", "INFO, stdout");
+			props.put("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");				
+			props.put("log4j.appender.stdout.Target", "System.out");
+			props.put("log4j.appender.stdout.layout", "org.apache.log4j.PatternLayout");
+			props.put("log4j.appender.stdout.layout.ConversionPattern", "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n");
+			FileOutputStream outputStream = new FileOutputStream("log4j.properties");
+			props.store(outputStream, "This is a default properties file");
+			System.out.println("Default properties file created.");
+		} catch (IOException e) {
+			System.out.println("Default properties file not created.");
+			e.printStackTrace();
+		}
+													
+		String log4jConfPath = "log4j.properties";
+		PropertyConfigurator.configure(log4jConfPath);
+							
+		MongoCollection <Document> «dec.name» = MongoClients.create().getDatabase("«database»").getCollection("«collection»");
+		'''
+	} else {
+		return '''
+		PropertyConfigurator.configure(«IF 
+			((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s.nullOrEmpty
+			»«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_f.name
+			»«ELSE
+			»"«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s»"«ENDIF»);
+							
+		MongoCollection <Document> «dec.name» = MongoClients.create().getDatabase("«database»").getCollection("«collection»");
+		'''
 	}
-												
-	String log4jConfPath = "log4j.properties";
-	PropertyConfigurator.configure(log4jConfPath);
-			
-	MongoClient «dec.name» = MongoClients.create();
-	MongoDatabase «dec.name»_«database» = «dec.name».getDatabase("«database»");
-	«IF !(collection.nullOrEmpty)»
-	MongoCollection <Document> «dec.name»_«database»_«collection» = «dec.name»_«database».getCollection("«collection»");
-	«ENDIF»
-	'''
 }
 
 case "query":{
 	var query_type = ((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
-	if (query_type.equals("update")){
-		typeSystem.get(scope).put(dec.name, "int")
-	}else if (query_type.equals("value")){
-		typeSystem.get(scope).put(dec.name, "Table")
-	} else {
-		typeSystem.get(scope).put(dec.name, "Table")
-	}
 	var connectionVar = (((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f as VariableDeclaration).right as DeclarationObject
 	var typeDatabase = (connectionVar.features.get(0) as DeclarationFeature).value_s
 	var connection = ((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f.name
-	if (typeDatabase.equals("sql")) {
+	if(typeDatabase.equals("sql")) {
+		if(query_type.equals("update")){
+			typeSystem.get(scope).put(dec.name, "int")
+		} else if(query_type.equals("value")){
+			typeSystem.get(scope).put(dec.name, "Table")
+		} else {
+			typeSystem.get(scope).put(dec.name, "Table")
+		}
 		return '''
 		PreparedStatement «dec.name» = «connection».prepareStatement(
 		«IF 
@@ -107,6 +115,11 @@ case "query":{
 		);
 		'''
 	} else if(typeDatabase.equals("nosql")) {
+		if(query_type.equals("select")){
+			typeSystem.get(scope).put(dec.name, "Table")
+		} else if(query_type.equals("delete")){
+			typeSystem.get(scope).put(dec.name, "boolean")
+		}
 		return '''
 		BsonDocument «dec.name» = Document.parse(«IF 
 			((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
@@ -143,6 +156,9 @@ case "query":{
 			if(queryType.equals("select")) {
 				return '''
 				__generateTableFromNoSQLQuery(«connection.name»_«database»_«collection».find(«expression.target.name»).cursor())'''
+			}  if(queryType.equals("delete")) {
+				return '''
+				(«connection.name»_«database»_«collection».deleteMany(«expression.target.name»).getDeletedCount() > 0) ? true : false'''
 			}
 		}
 	}
@@ -181,6 +197,29 @@ case "nosql":{
 		'''
 	}
 	
+}
+```
+### Inside valuateArithmeticExpression 
+```
+else if (type.equals("query")){
+	var queryType = (exp.target.right as DeclarationObject).features.get(1).value_s
+	var typeDatabase = (((exp.target.right as DeclarationObject)
+		.features.get(2).value_f as VariableDeclaration).right as DeclarationObject).features.get(0).value_s
+	if(typeDatabase.equals("sql")) {
+		if(queryType.equals("update")){
+			return "int"
+		} else if(queryType.equals("value")){
+			return "String"
+		} else {
+			return "Table"
+		}
+	} else {
+		if(queryType.equals("select")){
+			return "Table"
+		} else {
+			return "boolean"
+		}
+	}
 }
 ```
 ### Inside pom.xml
