@@ -6,22 +6,34 @@ var pathOfCSV = "/home/devcirillo/Documenti/GitHub/nosql-fly-implementation/FLY-
 
 var weatherCSV = [type = "file", path = pathOfCSV, ext = "csv"]
 
-var insert = [type = "query", query_type = "insert", collection = nosql, 
-	statement = weatherCSV]
+var insertWeatherCSV = [type = "query", query_type = "insert", collection = nosql, 
+	statement = weatherCSV, from = "0", to = "150"]
 
-insert.execute()
+insertWeatherCSV.execute()
 
-var query = [type = "query", query_type = "select", collection = nosql,
-	statement = "{'$and': [{'Temperature (C)': {'$gt': '5'}}, {'Temperature (C)': {'$lt': '6'}}]}"]
+var insertStudent = [type = "query", query_type = "insert", collection = nosql,
+	statement = "{'name': 'Antonio', 'surname': 'Cirillo', 'age': 21}"]
+
+insertStudent.execute()
+
+var insertStudents = [type = "query", query_type = "insert", collection = nosql,
+	statement = "[ { 'name': 'Andrea', surname': 'Di Pierno', 'age': 21 }, { 'name': 'Giovanni', 'surname': 'Rapa', 'age': 21 } ]"]
+
+//insertStudents.execute()
+
+// var query = [type = "query", query_type = "select", collection = nosql,
+//	statement = "{'$and': [{'Temperature (C)': {'$gt': '5'}}, {'Temperature (C)': {'$lt': '6'}}]}"]
+
+var query = [type = "query", query_type = "select", collection = nosql, statement = '{ }']
 	
 var result = query.execute()
 
 for table in result {
-	println table
+	println "\\n" + table
 }
 
 var query_2 = [type = "query", query_type = "delete", collection = nosql, statement = "{ }"]
 
 var result_2 = query_2.execute()
 
-if(result_2) println "Collection dropped"
+if(result_2) println "\\nCollection dropped"
