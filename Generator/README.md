@@ -156,23 +156,45 @@ case "query":{
 				var variables = (((dec.right as DeclarationObject).features.get(3) as DeclarationFeature)
 					.value_f as VariableDeclaration).right as DeclarationObject
 				if(variables.features.get(0).value_s.equals("file")) {
-					return '''
-					List <Document> «dec.name» = new ArrayList <Document> ();
-					try (CSVReader ___CSVReader = new CSVReader(new FileReader(
+					if((dec.right as DeclarationObject).features.size() == 6) {
+						var from = ((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s
+						var to = ((dec.right as DeclarationObject).features.get(5) as DeclarationFeature).value_s
+						return '''
+						List <Document> «dec.name» = new ArrayList <Document> ();
+						try (CSVReader ___CSVReader = new CSVReader(new FileReader(
 							«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»))) {
-						List <String[]> ___listOfArrayString = ___CSVReader.readAll();
-						String[] ___nosqlfeatures = ___listOfArrayString.get(0);
-						for(int ___indexOfReadingFromCSV = 1; ___indexOfReadingFromCSV < ___listOfArrayString.size(); 
-								++___indexOfReadingFromCSV) {
-							Document ___dcmnt_tmp = new Document();
-							for(int ___indexOfReadingFromCSV2 = 0; ___indexOfReadingFromCSV2 
-									< ___nosqlfeatures.length; ___indexOfReadingFromCSV2++) 
-								___dcmnt_tmp.append(___nosqlfeatures[___indexOfReadingFromCSV2],
+							List <String[]> ___listOfArrayString = ___CSVReader.readAll();
+							String[] ___nosqlfeatures = ___listOfArrayString.get(0);
+							for(int ___indexOfReadingFromCSV = «from» + 1; ___indexOfReadingFromCSV 
+								< «to» + 1; ++___indexOfReadingFromCSV) {
+								Document ___dcmnt_tmp = new Document();
+								for(int ___indexOfReadingFromCSV2 = 0; ___indexOfReadingFromCSV2 < 
+									___nosqlfeatures.length; ___indexOfReadingFromCSV2++) 
+									___dcmnt_tmp.append(___nosqlfeatures[___indexOfReadingFromCSV2],
 										___listOfArrayString.get(___indexOfReadingFromCSV)[___indexOfReadingFromCSV2]); 
-							«dec.name».add(___dcmnt_tmp);
+								«dec.name».add(___dcmnt_tmp);
+							}
 						}
-					}
-					'''
+						'''
+					} else {
+						return '''
+						List <Document> «dec.name» = new ArrayList <Document> ();
+						try (CSVReader ___CSVReader = new CSVReader(new FileReader(
+							«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»))) {
+							List <String[]> ___listOfArrayString = ___CSVReader.readAll();
+							String[] ___nosqlfeatures = ___listOfArrayString.get(0);
+							for(int ___indexOfReadingFromCSV = 1; ___indexOfReadingFromCSV 
+								< ___listOfArrayString.size(); ++___indexOfReadingFromCSV) {
+								Document ___dcmnt_tmp = new Document();
+								for(int ___indexOfReadingFromCSV2 = 0; ___indexOfReadingFromCSV2 < 
+									___nosqlfeatures.length; ___indexOfReadingFromCSV2++) 
+									___dcmnt_tmp.append(___nosqlfeatures[___indexOfReadingFromCSV2],
+										___listOfArrayString.get(___indexOfReadingFromCSV)[___indexOfReadingFromCSV2]); 
+								«dec.name».add(___dcmnt_tmp);
+							}
+						}
+						'''
+					}	
 				} else {
 					return '''
 					String ___«dec.name»Statement = «((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»;
