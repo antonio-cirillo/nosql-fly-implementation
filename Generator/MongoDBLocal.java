@@ -27,6 +27,7 @@ import tech.tablesaw.io.csv.CsvWriteOptions;
 import tech.tablesaw.columns.Column;
 import tech.tablesaw.selection.Selection;
 import tech.tablesaw.table.Rows;
+import tech.tablesaw.api.IntColumn;
 import tech.tablesaw.api.Row;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.ExecutorService;
@@ -47,6 +48,8 @@ import org.apache.commons.io.FileUtils;
 import java.sql.*;
 import com.mongodb.client.*;
 import org.bson.*;
+import org.json.JSONArray;
+
 import java.io.FileReader;
 import com.opencsv.CSVReader;
 import java.util.Properties;
@@ -103,27 +106,27 @@ import com.google.gson.reflect.TypeToken;
 			
 			
 			nosql.insertMany(insertWeatherCSV);
-			String ___insertStudentStatement = "{'name': 'Antonio', 'surname': 'Cirillo', 'age': 21}";
-			if(___insertStudentStatement.charAt(0) != '[')
-				___insertStudentStatement = "[" + ___insertStudentStatement + "]";
-													
-			org.json.JSONArray ___insertStudentJsonArrayQuery = new org.json.JSONArray(___insertStudentStatement);
-			List <Document> insertStudent = new ArrayList <Document> ();
-			
-			for(int ___indexForJsonArray = 0; ___indexForJsonArray < ___insertStudentJsonArrayQuery.length(); ___indexForJsonArray++) 
-				insertStudent.add(Document.parse(___insertStudentJsonArrayQuery.get(___indexForJsonArray).toString()));
-			
-			
-			nosql.insertMany(insertStudent);
-			String ___insertStudentsStatement = "[ { 'name': 'Andrea', surname': 'Di Pierno', 'age': 21 }, { 'name': 'Giovanni', 'surname': 'Rapa', 'age': 21 } ]";
-			if(___insertStudentsStatement.charAt(0) != '[')
-				___insertStudentsStatement = "[" + ___insertStudentsStatement + "]";
-													
-			org.json.JSONArray ___insertStudentsJsonArrayQuery = new org.json.JSONArray(___insertStudentsStatement);
-			List <Document> insertStudents = new ArrayList <Document> ();
-			
-			for(int ___indexForJsonArray = 0; ___indexForJsonArray < ___insertStudentsJsonArrayQuery.length(); ___indexForJsonArray++) 
-				insertStudents.add(Document.parse(___insertStudentsJsonArrayQuery.get(___indexForJsonArray).toString()));
+//			String ___insertStudentStatement = "{'name': 'Antonio', 'surname': 'Cirillo', 'age': 21}";
+//			if(___insertStudentStatement.charAt(0) != '[')
+//				___insertStudentStatement = "[" + ___insertStudentStatement + "]";
+//													
+//			org.json.JSONArray ___insertStudentJsonArrayQuery = new org.json.JSONArray(___insertStudentStatement);
+//			List <Document> insertStudent = new ArrayList <Document> ();
+//			
+//			for(int ___indexForJsonArray = 0; ___indexForJsonArray < ___insertStudentJsonArrayQuery.length(); ___indexForJsonArray++) 
+//				insertStudent.add(Document.parse(___insertStudentJsonArrayQuery.get(___indexForJsonArray).toString()));
+//			
+//			
+//			nosql.insertMany(insertStudent);
+//			String ___insertStudentsStatement = "[ { 'name': 'Andrea', surname': 'Di Pierno', 'age': 21 }, { 'name': 'Giovanni', 'surname': 'Rapa', 'age': 21 } ]";
+//			if(___insertStudentsStatement.charAt(0) != '[')
+//				___insertStudentsStatement = "[" + ___insertStudentsStatement + "]";
+//													
+//			org.json.JSONArray ___insertStudentsJsonArrayQuery = new org.json.JSONArray(___insertStudentsStatement);
+//			List <Document> insertStudents = new ArrayList <Document> ();
+//			
+//			for(int ___indexForJsonArray = 0; ___indexForJsonArray < ___insertStudentsJsonArrayQuery.length(); ___indexForJsonArray++) 
+//				insertStudents.add(Document.parse(___insertStudentsJsonArrayQuery.get(___indexForJsonArray).toString()));
 			
 			BsonDocument query = Document.parse("{ }").toBsonDocument();
 			
@@ -145,147 +148,112 @@ import com.google.gson.reflect.TypeToken;
 			System.exit(0);
 		}
 			
+		
 		private static List <Table> __generateTableFromNoSQLQuery(MongoCursor <Document> ___mongoCursor) {
 			List <Table> ___resultGenerateTableFromNoSQLQuery = new ArrayList <> ();
 			
 			if(!___mongoCursor.hasNext()) 
 				return ___resultGenerateTableFromNoSQLQuery;
 						
-			org.json.JSONObject ___jsonObject;
-			ArrayList <ArrayList <String>> ___featuresOfMongoCursorResult = new ArrayList <> ();
-			ArrayList <org.json.JSONArray> ___jsonObjectOfMongoCursorResult = new ArrayList <> ();
+			org.json.JSONObject ___jsonObject; // L'oggetto corrente che andiamo a leggere.
+			ArrayList <ArrayList <String>> ___listFeatures = new ArrayList <> (); // La liste di tutte le features.
+			ArrayList <org.json.JSONArray> ___listObjects = new ArrayList <> (); // La corrispondente lista di oggetti per quel tipo di features.
 										
 			while(___mongoCursor.hasNext()) {
-				___jsonObject = new org.json.JSONObject(___mongoCursor.next().toJson());
-				Iterator <String> ___iteratorJsonObjectKeys = ___jsonObject.keys(); 
-							
-				ArrayList <String> ___tmpFeatureOfJsonObject = new ArrayList <String> ();
+				___jsonObject = new org.json.JSONObject(___mongoCursor.next().toJson()); // Leggiamo un oggetto.
+				Iterator <String> ___iteratorJsonObjectKeys = ___jsonObject.keys(); // Otteniamo le features dell'oggetto appena letto.		
+				ArrayList <String> ___listFeaturesCurrent = new ArrayList <String> (); // La liste delle features dell'oggetto che stiamo leggendo.
+				
 				while(___iteratorJsonObjectKeys.hasNext())
-					___tmpFeatureOfJsonObject.add(___iteratorJsonObjectKeys.next());
-								
-				boolean ___structureIsEquals = false;
-				int ___indexGenerateTableFromNoSQLQuery = 0;
-				for(; ___indexGenerateTableFromNoSQLQuery < ___featuresOfMongoCursorResult.size();
-					++___indexGenerateTableFromNoSQLQuery) {
-					if(___featuresOfMongoCursorResult.get(___indexGenerateTableFromNoSQLQuery).equals(___tmpFeatureOfJsonObject)) {
-						___structureIsEquals = true;
+					___listFeaturesCurrent.add(___iteratorJsonObjectKeys.next());
+				// Ora abbiamo la lista completa delle features che compongo l'oggetto appena letto.				
+				
+				
+				int ___i = 0;			
+				// Andiamo a contraollare se la struttura dell'oggetto che stiamo leggendo corrisponde ad una struttura già letta.
+				for(; ___i < ___listFeatures.size(); ++___i)
+					if(___listFeatures.get(___i).equals(___listFeaturesCurrent))
 						break;
-					}
-				}
 				
-				if(!___structureIsEquals) {
-					___featuresOfMongoCursorResult.add(___tmpFeatureOfJsonObject);
-					org.json.JSONArray ___tmpJsonArrayToAdd = new org.json.JSONArray();
-					___tmpJsonArrayToAdd.put(___jsonObject);
-					___jsonObjectOfMongoCursorResult.add(___tmpJsonArrayToAdd);
-				} else {
-					org.json.JSONArray ___tmpJsonArrayToAdd = 
-					___jsonObjectOfMongoCursorResult.remove(___indexGenerateTableFromNoSQLQuery);
-					___tmpJsonArrayToAdd.put(___jsonObject);
-					___jsonObjectOfMongoCursorResult.add(___indexGenerateTableFromNoSQLQuery, ___tmpJsonArrayToAdd);
-				}
-				
+				if(___i >= ___listFeatures.size()) { // Se non abbiamo ancora letto un oggetto con questa struttura, allora... 
+					___listFeatures.add(___listFeaturesCurrent); // Aggiungiamo questa struttura alla lista delle strutture,
+					org.json.JSONArray ___listObjectForThisFeatures = new org.json.JSONArray(); // Creaiamo la lista di oggetti corrispondenti per questa struttura,
+					___listObjectForThisFeatures.put(___jsonObject); // Aggiungiamo l'oggetto che abbiamo letto alla lista di oggetti,
+					___listObjects.add(___listObjectForThisFeatures); // Aggiungiamo la lista di oggetti per questa struttura alla lista di tutti gli oggetti.
+				} else  // Se abbiamo letto già un oggetto con questa struttura, allora...
+					___listObjects.get(___i).put(___jsonObject); // Aggiungiamo l'oggetto alla lista degli oggetti con questa struttura.			
 			}
 			
-			for(int ___indexForCreatingTable = 0; ___indexForCreatingTable < ___featuresOfMongoCursorResult.size();
-					++___indexForCreatingTable) {
-				Table ___tableToReturn = Table.create();
-				ArrayList <String> ___tmpFeaturesForColumns = ___featuresOfMongoCursorResult.get(___indexForCreatingTable);
-				org.json.JSONArray ___tmpJsonArrayForThisTable = ___jsonObjectOfMongoCursorResult.get(___indexForCreatingTable);
-				for(int ___indexForReadingFeatures = 0; 
-						___indexForReadingFeatures < ___tmpFeaturesForColumns.size(); ___indexForReadingFeatures++) {
-					String ___feature = ___tmpFeaturesForColumns.get(___indexForReadingFeatures);
-					ArrayList <String> ___columnToAdd = new ArrayList <> ();
-					boolean ___flag = true;
-					Table ___extractTable = null;					
-					for(int ___indexForReadingObject = 0; 
-							___indexForReadingObject < ___tmpJsonArrayForThisTable.length(); ___indexForReadingObject++) {
-						org.json.JSONObject ___tmpJsonForThisTable =
-								___tmpJsonArrayForThisTable.getJSONObject(___indexForReadingObject);
-						Object ___objectExtractFromQuery = ___tmpJsonForThisTable.get(___feature);
-						if(___objectExtractFromQuery instanceof String) {
-							___flag = true;
-							___columnToAdd.add((String) ___objectExtractFromQuery);
-						} else if(___objectExtractFromQuery instanceof Integer) { 
-							___flag = true;
-							___columnToAdd.add(___objectExtractFromQuery + "");
-						} else if(___objectExtractFromQuery instanceof org.json.JSONObject) {
-							if(___feature.equals("_id")) {
-								___flag = true;
-								___columnToAdd.add(((org.json.JSONObject) ___objectExtractFromQuery).getString("$oid"));
-							} else {	
-								___flag = false;
-								Iterator <String> ___subIteratorFeatures = ((org.json.JSONObject) ___objectExtractFromQuery).keys();
-								List <String> ___subFeatures = new ArrayList <> ();
-								while(___subIteratorFeatures.hasNext())
-									___subFeatures.add(___subIteratorFeatures.next());
-								if(___extractTable == null)
-									___extractTable = ___extractTableFromObject(
-										___feature, ___subFeatures, (org.json.JSONObject) ___objectExtractFromQuery);
-								else 
-									___extractTable.append(___extractTableFromObject(
-										___feature, ___subFeatures, (org.json.JSONObject) ___objectExtractFromQuery));
-							}
-						}
-					}
-					if(___flag)
-						___tableToReturn.addColumns(
-								StringColumn.create(
-										___feature, ___columnToAdd));
-					else
-						for(Column c : ___extractTable.columns())
-							___tableToReturn.addColumns(c);
-				}
-				___resultGenerateTableFromNoSQLQuery.add(___tableToReturn);
+			for(int ___i = 0; ___i < ___listFeatures.size(); ++___i) { // Ora per ogni lista di features... 
+				Table ___table = Table.create(); // Creiamo una tabella,
+				ArrayList <String> ___features = ___listFeatures.get(___i); // Otteniamo le features,
+				org.json.JSONArray ___objects = ___listObjects.get(___i); // Otteniamo gli oggetti che hanno queste features,
+				
+				for(Column <?> ___colum : ___generateColumns("", ___features, ___objects)) 
+						___table.addColumns(___colum); // Creiamo la colonna
+									
+				
+				___resultGenerateTableFromNoSQLQuery.add(___table);
 			}
 			
 			return 	___resultGenerateTableFromNoSQLQuery;
 		
 		}
 		
-		private static Table ___extractTableFromObject(
-				String ___feature, List <String> ___features, org.json.JSONObject ___jsonObject) {
-			Table ___tableToReturn = Table.create();		
+		private static List <Column <?>> ___generateColumns(String ___nameColumn, List <String> ___features, org.json.JSONArray ___objects) {
+			List <Column <?>> ___columns = new ArrayList <> ();
+			int ___j = 0;
 			
-			for(String ___f : ___features) {
-				Object ___objectExtractFromQuery = ___jsonObject.get(___f);
-				if(___objectExtractFromQuery instanceof String)
-					___tableToReturn.addColumns(
-						StringColumn.create(___feature + "_" + ___f, (String) ___objectExtractFromQuery));
-				else if(___objectExtractFromQuery instanceof Integer)
-					___tableToReturn.addColumns(
-							StringColumn.create(___feature + "_" + ___f, "" + ___objectExtractFromQuery));
-				else if(___objectExtractFromQuery instanceof org.json.JSONObject) {
-					Iterator <String> ___subIteratorFeatures = ((org.json.JSONObject) ___objectExtractFromQuery).keys();
+			for(String ___feature : ___features) {				
+				org.json.JSONObject ___object = ___objects.getJSONObject(0);
+				Object ___value = ___object.get(___feature);
+				
+				if(___value instanceof org.json.JSONObject) {
+					Iterator <String> ___subKeys = ((org.json.JSONObject) ___value).keys();
 					List <String> ___subFeatures = new ArrayList <> ();
-					while(___subIteratorFeatures.hasNext())
-						___subFeatures.add(___subIteratorFeatures.next());
-					for(Column c : ___extractTableFromObject(
-							___feature + "_" + ___f, ___subFeatures, (org.json.JSONObject) ___objectExtractFromQuery).columns())
-						___tableToReturn.addColumns(c);
-				} else if(___objectExtractFromQuery instanceof org.json.JSONArray) {
-					for(int ___indexJsonArray = 0; ___indexJsonArray < ((org.json.JSONArray) ___objectExtractFromQuery).length() ; ++___indexJsonArray) {
-						Object ___tmpObjectAtIndex = ((org.json.JSONArray) ___objectExtractFromQuery).get(___indexJsonArray);
-						if(___tmpObjectAtIndex instanceof org.json.JSONObject) {
-							Iterator <String> ___subIteratorFeatures = ((org.json.JSONObject) ___tmpObjectAtIndex).keys();
-							List <String> ___subFeatures = new ArrayList <> ();
-							while(___subIteratorFeatures.hasNext())
-								___subFeatures.add(___subIteratorFeatures.next());
-							for(Column c :___extractTableFromObject(
-										___feature + "_" + ___f + "_" + ___indexJsonArray,___subFeatures,
-										((org.json.JSONArray) ___objectExtractFromQuery).getJSONObject(___indexJsonArray)).columns())
-								___tableToReturn.addColumns(c);
-						} else 
-							___tableToReturn.addColumns(StringColumn.create(___feature + "_" + ___f + "_" + ___indexJsonArray, "" + ___tmpObjectAtIndex));
-							
+					while(___subKeys.hasNext())
+						___subFeatures.add(___subKeys.next());
+					
+					org.json.JSONArray ___subObjects = new org.json.JSONArray().put(___value);
+					for(int ___i = 1; ___i < ___objects.length(); ++___i) {
+						___object = ___objects.getJSONObject(___i);
+						___value = ___object.get(___feature);
+						___subObjects.put(___value);
 					}
-				} 
-			}
+					
+					for(Column <?> ___column : ___generateColumns(___feature + "_", ___subFeatures, ___subObjects)) {
+						___columns.add(___column);
+						++___j;
+					}
 						
-			return ___tableToReturn;
+					
+				} else {
+				
+					if(___value instanceof Integer)
+						___columns.add(IntColumn.create(___nameColumn + ___feature, (int) ___value));
+					else				
+						___columns.add(StringColumn.create(___nameColumn +___feature, "" + ___value));
+					
+					for(int ___i = 1; ___i < ___objects.length(); ++___i) {					
+						___object = ___objects.getJSONObject(___i);
+						___value = ___object.get(___feature);
+						
+						if(___value instanceof Integer)
+							((IntColumn) ___columns.get(___j)).append((int) ___value);
+						else
+							((StringColumn) ___columns.get(___j)).append("" + ___value);					
+					}
+				
+					++___j;
+					
+				}
+								
+			}
+					
+			return ___columns;
 		}
 		
-	private static String __generateString(Table t,int id) {
+		private static String __generateString(Table t,int id) {
 			StringBuilder b = new StringBuilder();
 			b.append("{\"id\":\""+id+"\",\"data\":");
 			b.append("[");
