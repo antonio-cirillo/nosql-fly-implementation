@@ -56,6 +56,8 @@ import java.util.Properties;
 import org.apache.log4j.PropertyConfigurator;
 import java.util.Iterator;
 import tech.tablesaw.api.StringColumn;
+
+import com.amazonaws.services.guardduty.model.Organization;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 	
@@ -105,19 +107,19 @@ import com.google.gson.reflect.TypeToken;
 			}
 			
 			
-			nosql.insertMany(insertWeatherCSV);
-//			String ___insertStudentStatement = "{'name': 'Antonio', 'surname': 'Cirillo', 'age': 21}";
-//			if(___insertStudentStatement.charAt(0) != '[')
-//				___insertStudentStatement = "[" + ___insertStudentStatement + "]";
-//													
-//			org.json.JSONArray ___insertStudentJsonArrayQuery = new org.json.JSONArray(___insertStudentStatement);
-//			List <Document> insertStudent = new ArrayList <Document> ();
-//			
-//			for(int ___indexForJsonArray = 0; ___indexForJsonArray < ___insertStudentJsonArrayQuery.length(); ___indexForJsonArray++) 
-//				insertStudent.add(Document.parse(___insertStudentJsonArrayQuery.get(___indexForJsonArray).toString()));
-//			
-//			
-//			nosql.insertMany(insertStudent);
+//			nosql.insertMany(insertWeatherCSV);
+			String ___insertStudentStatement = "{'name': 'Antonio', 'surname': 'Cirillo', 'age': 21, 'address': {city: 'Battipaglia', street: 'Via Paolo Baratta'}, 'tel': [{'prefix': '+39', 'num': '331-xxxxxxx'}, '333-xxxxxxx', ['333-xxxxxxx']]}";
+			if(___insertStudentStatement.charAt(0) != '[')
+				___insertStudentStatement = "[" + ___insertStudentStatement + "]";
+													
+			org.json.JSONArray ___insertStudentJsonArrayQuery = new org.json.JSONArray(___insertStudentStatement);
+			List <Document> insertStudent = new ArrayList <Document> ();
+			
+			for(int ___indexForJsonArray = 0; ___indexForJsonArray < ___insertStudentJsonArrayQuery.length(); ___indexForJsonArray++) 
+				insertStudent.add(Document.parse(___insertStudentJsonArrayQuery.get(___indexForJsonArray).toString()));
+			
+			
+			nosql.insertMany(insertStudent);
 //			String ___insertStudentsStatement = "[ { 'name': 'Andrea', surname': 'Di Pierno', 'age': 21 }, { 'name': 'Giovanni', 'surname': 'Rapa', 'age': 21 } ]";
 //			if(___insertStudentsStatement.charAt(0) != '[')
 //				___insertStudentsStatement = "[" + ___insertStudentsStatement + "]";
@@ -167,8 +169,7 @@ import com.google.gson.reflect.TypeToken;
 				while(___iteratorJsonObjectKeys.hasNext())
 					___listFeaturesCurrent.add(___iteratorJsonObjectKeys.next());
 				// Ora abbiamo la lista completa delle features che compongo l'oggetto appena letto.				
-				
-				
+								
 				int ___i = 0;			
 				// Andiamo a contraollare se la struttura dell'oggetto che stiamo leggendo corrisponde ad una struttura già letta.
 				for(; ___i < ___listFeatures.size(); ++___i)
@@ -189,18 +190,17 @@ import com.google.gson.reflect.TypeToken;
 				ArrayList <String> ___features = ___listFeatures.get(___i); // Otteniamo le features,
 				org.json.JSONArray ___objects = ___listObjects.get(___i); // Otteniamo gli oggetti che hanno queste features,
 				
-				for(Column <?> ___colum : ___generateColumns("", ___features, ___objects)) 
-						___table.addColumns(___colum); // Creiamo la colonna
-									
+				for(Column <?> ___column : ___generateColumns("", ___features, ___objects))
+					___table.addColumns(___column); // Creiamo la colonna
 				
 				___resultGenerateTableFromNoSQLQuery.add(___table);
 			}
 			
-			return 	___resultGenerateTableFromNoSQLQuery;
-		
+			return 	___resultGenerateTableFromNoSQLQuery;		
 		}
 		
-		private static List <Column <?>> ___generateColumns(String ___nameColumn, List <String> ___features, org.json.JSONArray ___objects) {
+		private static List <Column <?>> ___generateColumns(
+				String ___nameColumn, List <String> ___features, org.json.JSONArray ___objects) {
 			List <Column <?>> ___columns = new ArrayList <> ();
 			int ___j = 0;
 			
@@ -221,17 +221,32 @@ import com.google.gson.reflect.TypeToken;
 						___subObjects.put(___value);
 					}
 					
-					for(Column <?> ___column : ___generateColumns(___feature + "_", ___subFeatures, ___subObjects)) {
+					for(Column <?> ___column : ___generateColumns(
+							___nameColumn + ___feature + "_",___subFeatures, ___subObjects)) {
 						___columns.add(___column);
 						++___j;
 					}
+									
+				} else if(___value instanceof org.json.JSONArray) {
+					for(int ___i = 0; ___i < ((org.json.JSONArray) ___value).length(); ++___i) {
+						Object ___subObject = ((org.json.JSONArray) ___value).get(___i);
+						org.json.JSONObject ___subJSONObject = new org.json.JSONObject();
+						ArrayList <String> ___subFeatures = new ArrayList <> ();
+						___subFeatures.add("" + ___i);
+						___subJSONObject.put("" + ___i, ___subObject);
 						
+						for(Column <?> ___column : ___generateColumns(___nameColumn + ___feature + "_",
+								___subFeatures, new org.json.JSONArray().put(___subJSONObject.put("" + ___i, ___subObject))))
+							___columns.add(___column);
+					}					
 					
 				} else {
 				
-					if(___value instanceof Integer)
-						___columns.add(IntColumn.create(___nameColumn + ___feature, (int) ___value));
-					else				
+					if(___value instanceof Integer) {
+						IntColumn ___columnToAdd = IntColumn.create(___nameColumn + ___feature);
+						___columnToAdd.append((Integer) ___value);
+						___columns.add(___columnToAdd);
+					} else				
 						___columns.add(StringColumn.create(___nameColumn +___feature, "" + ___value));
 					
 					for(int ___i = 1; ___i < ___objects.length(); ++___i) {					
@@ -239,15 +254,13 @@ import com.google.gson.reflect.TypeToken;
 						___value = ___object.get(___feature);
 						
 						if(___value instanceof Integer)
-							((IntColumn) ___columns.get(___j)).append((int) ___value);
+							((IntColumn) ___columns.get(___j)).append((Integer) ___value);
 						else
 							((StringColumn) ___columns.get(___j)).append("" + ___value);					
 					}
-				
 					++___j;
 					
-				}
-								
+				}								
 			}
 					
 			return ___columns;
