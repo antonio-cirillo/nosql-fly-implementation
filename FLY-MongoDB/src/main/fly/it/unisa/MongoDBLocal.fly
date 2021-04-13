@@ -12,14 +12,17 @@ var insertWeatherCSV = [type = "query", query_type = "insert", collection = nosq
 insertWeatherCSV.execute()
 
 var insertStudent = [type = "query", query_type = "insert", collection = nosql,
-	statement = "{'name': 'Antonio', 'surname': 'Cirillo', 'age': 21}"]
+	statement = "{'name': 'Antonio', 'surname': 'Cirillo', 'age': 21, address: {city: 'Battipaglia', zip: 84091, street: 'Via Paolo Baratta'}}"]
 
 insertStudent.execute()
 
-var insertStudents = [type = "query", query_type = "insert", collection = nosql,
-	statement = "[ { 'name': 'Andrea', surname': 'Di Pierno', 'age': 21 }, { 'name': 'Giovanni', 'surname': 'Rapa', 'age': 21 } ]"]
+var statementInsertStudents = "[ { 'name': 'Marcello', surname: 'Di Francesco', 'age': 22, address: {city: 'Giffoni V.P.', zip: 84095, street: 'Via Italia'} },"
+ + " { 'name': 'Giovanni', 'surname': 'Rapa', 'age': 25, address: {city: 'Battipaglia', zip: 84091, street: 'Via Roma'} } ]"
 
-//insertStudents.execute()
+var insertStudents = [type = "query", query_type = "insert", collection = nosql,
+	statement = statementInsertStudents]
+
+insertStudents.execute()
 
 // var query = [type = "query", query_type = "select", collection = nosql,
 //	statement = "{'$and': [{'Temperature (C)': {'$gt': '5'}}, {'Temperature (C)': {'$lt': '6'}}]}"]
