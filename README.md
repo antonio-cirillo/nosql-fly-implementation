@@ -1,6 +1,37 @@
 # Implementazione NoSQL in FLY
 ## Indice
+- [Stabilire una connessione a MongoDB in FLY](#stabilire-una-connessione-a-mongodb-in-fly)
+- [Operazioni CRUD](#operazioni-crud)
 - [Modifiche effettuate al generatore](#modifiche-effettuate-al-generatore)
+## Stabilire una connessione a MongoDB in FLY
+Per stabili una connessione a MongoDB in FLY non ci basta che creare una nuova variabile di tipo `nosql`.  
+Le variabili di tipo `nosql` sono composte da, oltre al parametro type, tre parametri obbligari, che sono:  
+- `client`: ancora da implementare...
+- `database`: serve per specifiare il nome del database al quale vogliamo connetterci;
+- `collection`: serve per specifiare il nome della collezione di quel database che vogliamo utilizzare.  
+  
+Oltre a questi tre parametri, vi è un parametro opzionale, `path`,  che serve per specifiare il path del file log4j.properties. Quest'ultimo è opzionale
+in quanto, se non specificato, verrà generato ed utilizzato un file log4j.properties, all'interno del progetto, contenenti delle proprietà "predefinite", ovvero:
+```
+log4j.appender.stdout.Target=System.out
+log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+log4j.rootLogger=INFO, stdout
+log4j.appender.stdout.layout.ConversionPattern=%d{yy/MM/dd HH\:mm\:ss} %p %c{2}\: %m%n
+```
+Un esempio di dichiarazione di questa variabile potrebbe essere:
+```
+var nosql = [type = "nosql", client = "", database = "namedabase", collection = "namecollection"]
+```
+In questo modo verrà stabilita una connessione al database `namedatabase` e verrà utilizzta la collezione `namecollection`. Poiché il parametro `path` non è stato specificato
+verrà generato e utilizzato un file log4j.properties contenente le proprietà descritte sopra.
+## Operazioni CRUD
+- [Insert](#insert)
+- [Select](#select)
+- [Delete](#delete)
+### Insert
+### Select
+### Delete
 ## Modifiche effettuate al generatore
 ### Inside compileJava function
 ```
