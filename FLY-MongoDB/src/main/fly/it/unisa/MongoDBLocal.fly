@@ -12,12 +12,12 @@ var insertWeatherCSV = [type = "query", query_type = "insert", collection = nosq
 insertWeatherCSV.execute()
 
 var insertStudent = [type = "query", query_type = "insert", collection = nosql,
-	statement = "{'name': 'Antonio', 'surname': 'Cirillo', 'age': 21, address: {city: 'Battipaglia', zip: 84091, street: 'Via Paolo Baratta'}}"]
+	statement = "{'name': 'Antonio', 'surname': 'Cirillo', 'age': 21, 'address': {'city': 'Battipaglia', 'zip': 84091, 'street': 'Via Paolo Baratta'}, 'tel': ['333-xxxxxx']}"]
 
 insertStudent.execute()
 
-var statementInsertStudents = "[ { 'name': 'Marcello', surname: 'Di Francesco', 'age': 22, address: {city: 'Giffoni V.P.', zip: 84095, street: 'Via Italia'} },"
- + " { 'name': 'Giovanni', 'surname': 'Rapa', 'age': 25, address: {city: 'Battipaglia', zip: 84091, street: 'Via Roma'} } ]"
+var statementInsertStudents = "[{'name': 'Giovanni', 'surname': 'Rapa', 'age': 22, 'address': {'city': 'Giffoni V.P.', 'zip': 84095, 'street': 'Via Italia'}, 'tel': ['333-xxxxxxx', '335-xxxxxxx']}, "
+	+ "{'name': 'Mario', 'surname': 'De Riggi', 'age': 25, 'address': {'city': 'Montecorvino Pugliano', 'zip': 84092, 'street': 'Via Roma'}, 'tel': ['331-xxxxxxx']} ]"
 
 var insertStudents = [type = "query", query_type = "insert", collection = nosql,
 	statement = statementInsertStudents]
