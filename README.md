@@ -12,7 +12,7 @@ Le variabili di tipo `nosql` sono composte da, oltre al parametro type, tre para
   
 Oltre a questi tre parametri, vi è un parametro opzionale, `path`,  che serve per specifiare il path del file log4j.properties. Quest'ultimo è opzionale
 in quanto, se non specificato, verrà generato ed utilizzato un file log4j.properties, all'interno del progetto, contenenti delle proprietà "predefinite", ovvero:
-```
+```xml
 log4j.appender.stdout.Target=System.out
 log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
 log4j.appender.stdout=org.apache.log4j.ConsoleAppender
@@ -43,7 +43,7 @@ Grazie a questo oggetto, possiamo inserire uno o più oggetti all'interno della 
 Per poter eseguire quest'operazione, non ci basta che inizializzare una variabile di tipo `query`, settando gli altri parametri nel modo corretto.
 All'interno del parametro `statement` dobbiamo inserire gli oggetti in formato JSON che intendiamo inserire all'interno della nostra collezione.  
 Mostriamo uno snippet di codice per intenderci meglio. Intendiamo aggiungere questo oggetto JSON all'interno della nostra collezione `students`:
-```
+```json
 {
 	'name': 'Antonio',
 	'surname': 'Cirillo',
@@ -100,7 +100,7 @@ insertStudentFromCSV.execute()
 
 ## Modifiche effettuate al generatore
 ### Inside compileJava function
-```
+```java import
 import com.mongodb.client.*;
 import org.bson.*;
 import java.io.FileReader;
@@ -109,307 +109,337 @@ import java.util.Properties;
 import org.apache.log4j.PropertyConfigurator;
 import java.util.Iterator;
 import tech.tablesaw.api.StringColumn;
-
+import tech.tablesaw.api.IntColumn;
+```
+```java global function
 private static List <Table> __generateTableFromNoSQLQuery(MongoCursor <Document> ___mongoCursor) {
-	List <Table> ___resultGenerateTableFromNoSQLQuery = new ArrayList <> ();
+				List <Table> ___resultGenerateTableFromNoSQLQuery = new ArrayList <> ();
 				
-	if(!___mongoCursor.hasNext()) 
-		return ___resultGenerateTableFromNoSQLQuery;
+				if(!___mongoCursor.hasNext()) 
+					return ___resultGenerateTableFromNoSQLQuery;
 							
-	org.json.JSONObject ___jsonObject;
-	ArrayList <ArrayList <String>> ___featuresOfMongoCursorResult = new ArrayList <> ();
-	ArrayList <org.json.JSONArray> ___jsonObjectOfMongoCursorResult = new ArrayList <> ();
+				org.json.JSONObject ___jsonObject; // L'oggetto corrente che andiamo a leggere.
+				ArrayList <ArrayList <String>> ___listFeatures = new ArrayList <> (); // La liste di tutte le features.
+				ArrayList <org.json.JSONArray> ___listObjects = new ArrayList <> (); // La corrispondente lista di oggetti per quel tipo di features.
 											
-	while(___mongoCursor.hasNext()) {
-		___jsonObject = new org.json.JSONObject(___mongoCursor.next().toJson());
-		Iterator <String> ___iteratorJsonObjectKeys = ___jsonObject.keys(); 
-								
-		ArrayList <String> ___tmpFeatureOfJsonObject = new ArrayList <String> ();
-		while(___iteratorJsonObjectKeys.hasNext())
-			___tmpFeatureOfJsonObject.add(___iteratorJsonObjectKeys.next());
-									
-		boolean ___structureIsEquals = false;
-		int ___indexGenerateTableFromNoSQLQuery = 0;
-		for(; ___indexGenerateTableFromNoSQLQuery < ___featuresOfMongoCursorResult.size();
-				++___indexGenerateTableFromNoSQLQuery) {
-			if(___featuresOfMongoCursorResult.get(___indexGenerateTableFromNoSQLQuery).equals(___tmpFeatureOfJsonObject)) {
-				___structureIsEquals = true;
-				break;
-			}
-		}
+				while(___mongoCursor.hasNext()) {
+					___jsonObject = new org.json.JSONObject(___mongoCursor.next().toJson()); // Leggiamo un oggetto.
+					Iterator <String> ___iteratorJsonObjectKeys = ___jsonObject.keys(); // Otteniamo le features dell'oggetto appena letto.		
+					ArrayList <String> ___listFeaturesCurrent = new ArrayList <String> (); // La liste delle features dell'oggetto che stiamo leggendo.
 					
-		if(!___structureIsEquals) {
-			___featuresOfMongoCursorResult.add(___tmpFeatureOfJsonObject);
-			org.json.JSONArray ___tmpJsonArrayToAdd = new org.json.JSONArray();
-			___tmpJsonArrayToAdd.put(___jsonObject);
-			___jsonObjectOfMongoCursorResult.add(___tmpJsonArrayToAdd);
-		} else {
-			org.json.JSONArray ___tmpJsonArrayToAdd = 
-			___jsonObjectOfMongoCursorResult.remove(___indexGenerateTableFromNoSQLQuery);
-			___tmpJsonArrayToAdd.put(___jsonObject);
-			___jsonObjectOfMongoCursorResult.add(___indexGenerateTableFromNoSQLQuery, ___tmpJsonArrayToAdd);
-		}
+					while(___iteratorJsonObjectKeys.hasNext())
+						___listFeaturesCurrent.add(___iteratorJsonObjectKeys.next());
+					// Ora abbiamo la lista completa delle features che compongo l'oggetto appena letto.				
+									
+					int ___i = 0;			
+					// Andiamo a contraollare se la struttura dell'oggetto che stiamo leggendo corrisponde ad una struttura già letta.
+					for(; ___i < ___listFeatures.size(); ++___i)
+						if(___listFeatures.get(___i).equals(___listFeaturesCurrent))
+							break;
+					
+					if(___i >= ___listFeatures.size()) { // Se non abbiamo ancora letto un oggetto con questa struttura, allora... 
+						___listFeatures.add(___listFeaturesCurrent); // Aggiungiamo questa struttura alla lista delle strutture,
+						org.json.JSONArray ___listObjectForThisFeatures = new org.json.JSONArray(); // Creaiamo la lista di oggetti corrispondenti per questa struttura,
+						___listObjectForThisFeatures.put(___jsonObject); // Aggiungiamo l'oggetto che abbiamo letto alla lista di oggetti,
+						___listObjects.add(___listObjectForThisFeatures); // Aggiungiamo la lista di oggetti per questa struttura alla lista di tutti gli oggetti.
+					} else  // Se abbiamo letto già un oggetto con questa struttura, allora...
+						___listObjects.get(___i).put(___jsonObject); // Aggiungiamo l'oggetto alla lista degli oggetti con questa struttura.			
+				}
 				
-	}
+				for(int ___i = 0; ___i < ___listFeatures.size(); ++___i) { // Ora per ogni lista di features... 
+					Table ___table = Table.create(); // Creiamo una tabella,
+					ArrayList <String> ___features = ___listFeatures.get(___i); // Otteniamo le features,
+					org.json.JSONArray ___objects = ___listObjects.get(___i); // Otteniamo gli oggetti che hanno queste features,
+					
+					for(Column <?> ___column : ___generateColumns("", ___features, ___objects))
+						___table.addColumns(___column); // Creiamo la colonna
+					
+					___resultGenerateTableFromNoSQLQuery.add(___table);
+				}
 				
-	for(int ___indexForCreatingTable = 0; ___indexForCreatingTable < ___featuresOfMongoCursorResult.size();
-			++___indexForCreatingTable) {
-		Table ___tableToReturn = Table.create();
-		ArrayList <String> ___tmpFeaturesForColumns = ___featuresOfMongoCursorResult.get(___indexForCreatingTable);
-		org.json.JSONArray ___tmpJsonArrayForThisTable = ___jsonObjectOfMongoCursorResult.get(___indexForCreatingTable);
-		for(int ___indexForReadingFeatures = 0; 
-				___indexForReadingFeatures < ___tmpFeaturesForColumns.size(); ___indexForReadingFeatures++) {
-			String ___feature = ___tmpFeaturesForColumns.get(___indexForReadingFeatures);
-			ArrayList <String> ___columnToAdd = new ArrayList <> ();
-			for(int ___indexForReadingObject = 0; 
-					___indexForReadingObject < ___tmpJsonArrayForThisTable.length(); ___indexForReadingObject++) {
-				org.json.JSONObject ___tmpJsonForThisTable =
-						___tmpJsonArrayForThisTable.getJSONObject(___indexForReadingObject);
-				if(___feature.equals("_id"))
-					___columnToAdd.add(___tmpJsonForThisTable.getJSONObject("_id").getString("$oid"));
-				else
-					___columnToAdd.add(___tmpJsonForThisTable.getString(___feature));
+				return 	___resultGenerateTableFromNoSQLQuery;		
 			}
-			___tableToReturn.addColumns(
-				StringColumn.create(
-					___feature, ___columnToAdd));
-		}
-		___resultGenerateTableFromNoSQLQuery.add(___tableToReturn);
-	}
+			
+			private static List <Column <?>> ___generateColumns(
+					String ___nameColumn, List <String> ___features, org.json.JSONArray ___objects) {
+				List <Column <?>> ___columns = new ArrayList <> ();
+				int ___j = 0;
 				
-	return 	___resultGenerateTableFromNoSQLQuery;
-		
-}
+				for(String ___feature : ___features) {				
+					org.json.JSONObject ___object = ___objects.getJSONObject(0);
+					Object ___value = ___object.get(___feature);
+					
+					if(___value instanceof org.json.JSONObject) {
+						___columns.add(StringColumn.create(___feature, ((org.json.JSONObject) ___value).toString()));
+						
+						for(int ___i = 1; ___i < ___objects.length(); ++___i) {					
+							___object = ___objects.getJSONObject(___i);
+							___value = ___object.get(___feature);
+						
+							((StringColumn) ___columns.get(___j)).append(((org.json.JSONObject) ___value).toString());
+						}
+						
+						++___j;
+						
+										
+					} else if(___value instanceof org.json.JSONArray) {
+						___columns.add(StringColumn.create(___feature, ((org.json.JSONArray) ___value).toString()));
+						
+						for(int ___i = 1; ___i < ___objects.length(); ++___i) {					
+							___object = ___objects.getJSONObject(___i);
+							___value = ___object.get(___feature);
+						
+							((StringColumn) ___columns.get(___j)).append(((org.json.JSONArray) ___value).toString());
+						}
+						++___j;
+						
+					} else {
+					
+						if(___value instanceof Integer) {
+							IntColumn ___columnToAdd = IntColumn.create(___nameColumn + ___feature);
+							___columnToAdd.append((Integer) ___value);
+							___columns.add(___columnToAdd);
+						} else				
+							___columns.add(StringColumn.create(___nameColumn +___feature, "" + ___value));
+						
+						for(int ___i = 1; ___i < ___objects.length(); ++___i) {					
+							___object = ___objects.getJSONObject(___i);
+							___value = ___object.get(___feature);
+							
+							if(___value instanceof Integer)
+								((IntColumn) ___columns.get(___j)).append((Integer) ___value);
+							else
+								((StringColumn) ___columns.get(___j)).append("" + ___value);					
+						}
+						++___j;
+						
+					}								
+				}			
+				return ___columns;
+			
+			}
 ```
 ### Inside generateVariableDeclaration function
 ```
 case "nosql":{
-	// var client = ((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
-	var database = ((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
-	var collection = ((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s
-	if((dec.right as DeclarationObject).features.size() < 5) {
-		return '''
-		try {
-			Properties props = new Properties();
-			props.put("log4j.rootLogger", "INFO, stdout");
-			props.put("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");
-			props.put("log4j.appender.stdout.Target", "System.out");
-			props.put("log4j.appender.stdout.layout", "org.apache.log4j.PatternLayout");
-			props.put("log4j.appender.stdout.layout.ConversionPattern", "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n");
-			FileOutputStream outputStream = new FileOutputStream("log4j.properties");
-			props.store(outputStream, "This is a default properties file");
-			System.out.println("Default properties file created.");
-		} catch (IOException e) {
-			System.out.println("Default properties file not created.");
-			e.printStackTrace();
-		}
+					    // var client = ((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
+						var database = ((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
+					    var collection = ((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s
+					    if((dec.right as DeclarationObject).features.size() < 5) {
+							return '''
+							try {
+								Properties props = new Properties();
+								props.put("log4j.rootLogger", "INFO, stdout");
+								props.put("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");
+								props.put("log4j.appender.stdout.Target", "System.out");
+								props.put("log4j.appender.stdout.layout", "org.apache.log4j.PatternLayout");
+								props.put("log4j.appender.stdout.layout.ConversionPattern", "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n");
+								FileOutputStream outputStream = new FileOutputStream("log4j.properties");
+								props.store(outputStream, "This is a default properties file");
+								System.out.println("Default properties file created.");
+							} catch (IOException e) {
+								System.out.println("Default properties file not created.");
+								e.printStackTrace();
+							}
 													
-		String log4jConfPath = "log4j.properties";
-		PropertyConfigurator.configure(log4jConfPath);
+							String log4jConfPath = "log4j.properties";
+							PropertyConfigurator.configure(log4jConfPath);
 							
-		MongoCollection <Document> «dec.name» = MongoClients.create().getDatabase("«database»").getCollection("«collection»");
-		'''
-	} else {
-		return '''
-		PropertyConfigurator.configure(«IF 
-			((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s.nullOrEmpty
-			»«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_f.name
-			»«ELSE
-			»"«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s»"«ENDIF»);
+							MongoCollection <Document> «dec.name» = MongoClients.create().getDatabase("«database»").getCollection("«collection»");
+							'''
+						} else {
+							return '''
+							PropertyConfigurator.configure(«IF 
+								((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s.nullOrEmpty
+								»«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_f.name
+								»«ELSE
+								»"«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s»"«ENDIF»);
 							
-		MongoCollection <Document> «dec.name» = MongoClients.create().getDatabase("«database»").getCollection("«collection»");
-		'''
-	}
-}
+							MongoCollection <Document> «dec.name» = MongoClients.create().getDatabase("«database»").getCollection("«collection»");
+							'''
+						}
+					}
 
 case "query":{
-	var query_type = ((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
-	var connectionVar = (((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f as VariableDeclaration).right as DeclarationObject
-	var typeDatabase = (connectionVar.features.get(0) as DeclarationFeature).value_s
-	var connection = ((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f.name
-	if(typeDatabase.equals("sql")) {
-		if(query_type.equals("update")){
-			typeSystem.get(scope).put(dec.name, "int")
-		} else if(query_type.equals("value")){
-			typeSystem.get(scope).put(dec.name, "Table")
-		} else {
-			typeSystem.get(scope).put(dec.name, "Table")
-		}
-		return '''
-		PreparedStatement «dec.name» = «connection».prepareStatement(
-		«IF 
-			((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
-		»
-		«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»
-		« ELSE » 
-			"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"
-		«ENDIF»
-		);
-		'''
-	} else if(typeDatabase.equals("nosql")) {
-		if(query_type.equals("select")){
-			typeSystem.get(scope).put(dec.name, "List <Table>")
-		} else if(query_type.equals("delete")){
-			typeSystem.get(scope).put(dec.name, "boolean")
-		}
-		if(query_type.equals("insert")) {
-			if(((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty) {
-				var variables = (((dec.right as DeclarationObject).features.get(3) as DeclarationFeature)
-					.value_f as VariableDeclaration).right as DeclarationObject
-				if(variables.features.get(0).value_s.equals("file")) {
-					if((dec.right as DeclarationObject).features.size() == 6) {
-						var from = ((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s
-						var to = ((dec.right as DeclarationObject).features.get(5) as DeclarationFeature).value_s
-						return '''
-						List <Document> «dec.name» = new ArrayList <Document> ();
-						try (CSVReader ___CSVReader = new CSVReader(new FileReader(
-							«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»))) {
-							List <String[]> ___listOfArrayString = ___CSVReader.readAll();
-							String[] ___nosqlfeatures = ___listOfArrayString.get(0);
-							for(int ___indexOfReadingFromCSV = «from» + 1; ___indexOfReadingFromCSV 
-								< «to» + 1; ++___indexOfReadingFromCSV) {
-								Document ___dcmnt_tmp = new Document();
-								for(int ___indexOfReadingFromCSV2 = 0; ___indexOfReadingFromCSV2 < 
-									___nosqlfeatures.length; ___indexOfReadingFromCSV2++) 
-									___dcmnt_tmp.append(___nosqlfeatures[___indexOfReadingFromCSV2],
-										___listOfArrayString.get(___indexOfReadingFromCSV)[___indexOfReadingFromCSV2]); 
-								«dec.name».add(___dcmnt_tmp);
+						var query_type = ((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
+						var connectionVar = (((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f as VariableDeclaration).right as DeclarationObject
+						var typeDatabase = (connectionVar.features.get(0) as DeclarationFeature).value_s
+						var connection = ((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f.name
+						if(typeDatabase.equals("sql")) {
+							if(query_type.equals("update")){
+								typeSystem.get(scope).put(dec.name, "int")
+							} else if(query_type.equals("value")){
+								typeSystem.get(scope).put(dec.name, "Table")
+							} else {
+								typeSystem.get(scope).put(dec.name, "Table")
+							}
+							return '''
+							PreparedStatement «dec.name» = «connection».prepareStatement(
+							«IF 
+								((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
+							»
+							«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»
+							« ELSE » 
+								"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"
+							«ENDIF»
+							);
+							'''
+						} else if(typeDatabase.equals("nosql")) {
+							if(query_type.equals("select")){
+								typeSystem.get(scope).put(dec.name, "List <Table>")
+							} else if(query_type.equals("delete")){
+								typeSystem.get(scope).put(dec.name, "boolean")
+							}
+							if(query_type.equals("insert")) {
+								if(((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty) {
+									if((((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f as VariableDeclaration).right instanceof DeclarationObject) {
+										var variables = (((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f as VariableDeclaration).right as DeclarationObject
+										if(variables.features.get(0).value_s.equals("file")) {
+											if((dec.right as DeclarationObject).features.size() == 6) {
+												var from = ((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s
+												var to = ((dec.right as DeclarationObject).features.get(5) as DeclarationFeature).value_s
+												return '''
+												List <Document> «dec.name» = new ArrayList <Document> ();
+												try (CSVReader ___CSVReader = new CSVReader(new FileReader(«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»))) {
+													List <String[]> ___listOfArrayString = ___CSVReader.readAll();
+													String[] ___nosqlfeatures = ___listOfArrayString.get(0);
+													for(int ___indexOfReadingFromCSV = «from» + 1; ___indexOfReadingFromCSV < «to» + 1; ++___indexOfReadingFromCSV) {
+														Document ___dcmnt_tmp = new Document();
+														for(int ___indexOfReadingFromCSV2 = 0; ___indexOfReadingFromCSV2 < ___nosqlfeatures.length; ___indexOfReadingFromCSV2++) 
+															___dcmnt_tmp.append(___nosqlfeatures[___indexOfReadingFromCSV2], ___listOfArrayString.get(___indexOfReadingFromCSV)[___indexOfReadingFromCSV2]); 
+														«dec.name».add(___dcmnt_tmp);
+													}
+												}
+												'''
+											} else {
+												return '''
+												List <Document> «dec.name» = new ArrayList <Document> ();
+												try (CSVReader ___CSVReader = new CSVReader(new FileReader(«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»))) {
+													List <String[]> ___listOfArrayString = ___CSVReader.readAll();
+													String[] ___nosqlfeatures = ___listOfArrayString.get(0);
+													for(int ___indexOfReadingFromCSV = 1; ___indexOfReadingFromCSV < ___listOfArrayString.size(); ++___indexOfReadingFromCSV) {
+														Document ___dcmnt_tmp = new Document();
+														for(int ___indexOfReadingFromCSV2 = 0; ___indexOfReadingFromCSV2 < ___nosqlfeatures.length; ___indexOfReadingFromCSV2++) 
+															___dcmnt_tmp.append(___nosqlfeatures[___indexOfReadingFromCSV2], ___listOfArrayString.get(___indexOfReadingFromCSV)[___indexOfReadingFromCSV2]); 
+														«dec.name».add(___dcmnt_tmp);
+													}
+												}
+												'''
+											}
+										} 
+									} else {
+										return '''
+										String ___«dec.name»Statement = «((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»;
+										if(___«dec.name»Statement.charAt(0) != '[')
+											___«dec.name»Statement = "[" + ___«dec.name»Statement + "]";
+																													
+										org.json.JSONArray ___«dec.name»JsonArrayQuery = new org.json.JSONArray(___«dec.name»Statement);
+										List <Document> «dec.name» = new ArrayList <Document> ();
+																			
+										for(int ___indexForJsonArray = 0; ___indexForJsonArray < ___«dec.name»JsonArrayQuery.length(); ___indexForJsonArray++) 
+										«dec.name».add(Document.parse(___«dec.name»JsonArrayQuery.get(___indexForJsonArray).toString()));
+										'''
+									}
+								} else {
+									return '''
+									String ___«dec.name»Statement = "«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»";
+									if(___«dec.name»Statement.charAt(0) != '[')
+										___«dec.name»Statement = "[" + ___«dec.name»Statement + "]";
+																			
+									org.json.JSONArray ___«dec.name»JsonArrayQuery = new org.json.JSONArray(___«dec.name»Statement);
+									List <Document> «dec.name» = new ArrayList <Document> ();
+									
+									for(int ___indexForJsonArray = 0; ___indexForJsonArray < ___«dec.name»JsonArrayQuery.length(); ___indexForJsonArray++) 
+										«dec.name».add(Document.parse(___«dec.name»JsonArrayQuery.get(___indexForJsonArray).toString()));'''
+								}
+							} else {
+								return '''
+								BsonDocument «dec.name» = Document.parse(«IF 
+									((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
+								»
+								«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»
+								« ELSE » 
+									"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«ENDIF»).toBsonDocument();
+								'''
 							}
 						}
-						'''
-					} else {
-						return '''
-						List <Document> «dec.name» = new ArrayList <Document> ();
-						try (CSVReader ___CSVReader = new CSVReader(new FileReader(
-							«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»))) {
-							List <String[]> ___listOfArrayString = ___CSVReader.readAll();
-							String[] ___nosqlfeatures = ___listOfArrayString.get(0);
-							for(int ___indexOfReadingFromCSV = 1; ___indexOfReadingFromCSV 
-								< ___listOfArrayString.size(); ++___indexOfReadingFromCSV) {
-								Document ___dcmnt_tmp = new Document();
-								for(int ___indexOfReadingFromCSV2 = 0; ___indexOfReadingFromCSV2 < 
-									___nosqlfeatures.length; ___indexOfReadingFromCSV2++) 
-									___dcmnt_tmp.append(___nosqlfeatures[___indexOfReadingFromCSV2],
-										___listOfArrayString.get(___indexOfReadingFromCSV)[___indexOfReadingFromCSV2]); 
-								«dec.name».add(___dcmnt_tmp);
-							}
-						}
-						'''
-					}	
-				} else {
-					return '''
-					String ___«dec.name»Statement = «((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»;
-					if(___«dec.name»Statement.charAt(0) != '[')
-						___«dec.name»Statement = "[" + ___«dec.name»Statement + "]";
-
-					org.json.JSONArray ___«dec.name»JsonArrayQuery = new org.json.JSONArray(___«dec.name»Statement);
-					List <Document> «dec.name» = new ArrayList <Document> ();
-
-					for(int ___indexForJsonArray = 0; ___indexForJsonArray < ___«dec.name»JsonArrayQuery.length(); ___indexForJsonArray++) 
-						«dec.name».add(Document.parse(___«dec.name»JsonArrayQuery.get(___indexForJsonArray).toString()));
-					'''
-				}
-			} else {
-				return '''
-				String ___«dec.name»Statement = "«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»";
-				if(___«dec.name»Statement.charAt(0) != '[')
-					___«dec.name»Statement = "[" + ___«dec.name»Statement + "]";
-
-				org.json.JSONArray ___«dec.name»JsonArrayQuery = new org.json.JSONArray(___«dec.name»Statement);
-				List <Document> «dec.name» = new ArrayList <Document> ();
-
-				for(int ___indexForJsonArray = 0; ___indexForJsonArray < ___«dec.name»JsonArrayQuery.length(); ___indexForJsonArray++) 
-					«dec.name».add(Document.parse(___«dec.name»JsonArrayQuery.get(___indexForJsonArray).toString()));
-				'''
-			}
-		} else {
-			return '''
-			BsonDocument «dec.name» = Document.parse(«IF 
-				((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
-			»
-			«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»
-			« ELSE » 
-				"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«ENDIF»).toBsonDocument();
-			'''
-		}
-	}
-}
+					}
 ```
 ### Inside generateVariableFunction
 ```
 case "query":{
-	if(expression.feature.equals("execute")){
-		var queryType = (expression.target.right as DeclarationObject).features.get(1).value_s
-		var connection = (((expression.target.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f as VariableDeclaration)
-		var databaseType = (connection.right as DeclarationObject).features.get(0).value_s
-		if(databaseType.equals("sql")) {
-			if(queryType.equals("update")){
-				return '''«(expression.target as VariableDeclaration).name».executeUpdate();'''
-			} else if(queryType.equals("value")){
-				return '''Table.read().db(
-				«(expression.target as VariableDeclaration).name».executeQuery()
-				).printAll().replaceAll("[^\\d.]+|\\.(?!\\d)", "");'''
-			} else {
-				return '''Table.read().db(
-				«(expression.target as VariableDeclaration).name».executeQuery()
-				);'''
-			}
-		} else if(databaseType.equals("nosql")){
-			if(queryType.equals("select")) {
-				return '''
-				__generateTableFromNoSQLQuery(«connection.name».find(«expression.target.name»).cursor());'''
-			} else if(queryType.equals("delete")) {
-				return '''
-				(«connection.name».deleteMany(«expression.target.name»).getDeletedCount() > 0) ? true : false;'''
-			} else if(queryType.equals("insert")) {
-				return '''
-				«connection.name».insertMany(«expression.target.name»);'''
-			}
-		}
-	}					
-}
+					if(expression.feature.equals("execute")){
+						var queryType = (expression.target.right as DeclarationObject).features.get(1).value_s
+						var connection = (((expression.target.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f as VariableDeclaration)
+						var databaseType = (connection.right as DeclarationObject).features.get(0).value_s
+						if(databaseType.equals("sql")) {
+							if(queryType.equals("update")){
+								return '''«(expression.target as VariableDeclaration).name».executeUpdate();'''
+							} else if(queryType.equals("value")){
+								return '''Table.read().db(
+										«(expression.target as VariableDeclaration).name».executeQuery()
+										).printAll().replaceAll("[^\\d.]+|\\.(?!\\d)", "");'''
+							} else {
+								return '''Table.read().db(
+										«(expression.target as VariableDeclaration).name».executeQuery()
+										);'''
+							}
+						} else if(databaseType.equals("nosql")){
+							if(queryType.equals("select")) {
+								return '''
+								__generateTableFromNoSQLQuery(«connection.name».find(«expression.target.name»).cursor());'''
+							} else if(queryType.equals("delete")) {
+								return '''
+								(«connection.name».deleteMany(«expression.target.name»).getDeletedCount() > 0) ? true : false;'''
+							} else if(queryType.equals("insert")) {
+								return '''
+								«connection.name».insertMany(«expression.target.name»);'''
+							}
+						}
+					}					
+				}
 ```
 ### Inside generateFor
 ```
 else if(typeSystem.get(scope).get((object as VariableLiteral).variable.name).equals("List <Table>")) {
-	var name = (object as VariableLiteral).variable.name;
-	var index_name = (indexes.indices.get(0) as VariableDeclaration).name
-	typeSystem.get(scope).put(index_name,name);
-	return '''
-	for(Table «index_name» : «name») {
-		«IF body instanceof BlockExpression»
-			«FOR exp : body.expressions »
-				«generateExpression(exp,scope)»
-			«ENDFOR»
-		«ELSE»
-			«generateExpression(body,scope)»
-		«ENDIF»
-	}
-	'''
-}
+					var name = (object as VariableLiteral).variable.name;
+					var index_name = (indexes.indices.get(0) as VariableDeclaration).name
+					typeSystem.get(scope).put(index_name,name);
+					return '''
+					for(Table «index_name» : «name») {
+						«IF body instanceof BlockExpression»
+							«FOR exp : body.expressions »
+								«generateExpression(exp,scope)»
+							«ENDFOR»
+						«ELSE»
+							«generateExpression(body,scope)»
+						«ENDIF»
+					}
+					'''
+				}
 ```
 ### Inside valuateArithmeticExpression 
 ```
 else if (type.equals("query")){
-	var queryType = (exp.target.right as DeclarationObject).features.get(1).value_s
-	var typeDatabase = (((exp.target.right as DeclarationObject)
-		.features.get(2).value_f as VariableDeclaration).right as DeclarationObject).features.get(0).value_s
-	if(typeDatabase.equals("sql")) {
-		if(queryType.equals("update")){
-			return "int"
-		} else if(queryType.equals("value")){
-			return "String"
-		} else {
-			return "Table"
-		}
-	} else {
-		if(queryType.equals("select")){
-			return "List <Table>"
-		} else {
-			return "boolean"
-		}
-	}
-} 
+						var queryType = (exp.target.right as DeclarationObject).features.get(1).value_s
+						var typeDatabase = (((exp.target.right as DeclarationObject)
+							.features.get(2).value_f as VariableDeclaration).right as DeclarationObject).features.get(0).value_s
+						if(typeDatabase.equals("sql")) {
+							if(queryType.equals("update")){
+								return "int"
+							} else if(queryType.equals("value")){
+								return "String"
+							} else {
+								return "Table"
+							}
+						} else {
+							if(queryType.equals("select")){
+								return "List <Table>"
+							} else {
+								return "boolean"
+							}
+						}
+					} 
 ```
 ### Inside pom.xml
 ```
