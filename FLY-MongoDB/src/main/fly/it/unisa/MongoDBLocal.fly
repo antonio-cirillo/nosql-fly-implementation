@@ -4,6 +4,8 @@
 var nosql = [type = "nosql", client = "", database = "mydb", collection = "weather"]
 var pathOfCSV = "/home/devcirillo/Documenti/GitHub/nosql-fly-implementation/FLY-MongoDB/weatherHistory.csv"
 
+// ================== TEST INSERT OPERATION ================== //
+
 var weatherCSV = [type = "file", path = pathOfCSV, ext = "csv"]
 
 var insertWeatherCSV = [type = "query", query_type = "insert", collection = nosql, 
@@ -24,8 +26,7 @@ var insertStudents = [type = "query", query_type = "insert", collection = nosql,
 
 insertStudents.execute()
 
-// var query = [type = "query", query_type = "select", collection = nosql,
-//	statement = "{'$and': [{'Temperature (C)': {'$gt': '5'}}, {'Temperature (C)': {'$lt': '6'}}]}"]
+// ================== TEST SELECT OPERATION ================== //
 
 var query = [type = "query", query_type = "select", collection = nosql, statement = '{ }']
 	
@@ -35,8 +36,42 @@ for table in result {
 	println "\\n" + table
 }
 
+// ================== TEST UPDATE OPERATION ================== //
+
+var filterUpdate = "{'address.city': 'Battipaglia'}"
+
+var statementUpdate = "{ '$set': {'address.city': 'Montecorvino Pugliano', 'address.zip': 84092} }"
+
+var update = [type = "query", query_type = "update", collection = nosql, filter = filterUpdate, statement = statementUpdate]
+
+update.execute()
+
+var result_2 = query.execute()
+
+for table in result_2 {
+	println "\\n" + table
+}
+
+// ================== TEST REPLACE OPERATION ================== //
+
+var filterReplace = "{'name': 'Giovanni'}"
+
+var statementReplace = "{'name': 'Carmine', 'surname': 'Amendola', 'age': 28, 'address': {'city': 'Montecorvino Pugliano', 'zip': 84092, 'street': 'Via Giovanni'}, 'tel': ['392-xxxxxxx', '321-xxxxxxx']}"
+
+var replace = [type = "query", query_type = "replace", collection = nosql, filter = filterReplace, statement = statementReplace]
+
+replace.execute()
+
+var result_3 = query.execute()
+
+for table in result_3 {
+	println "\\n" + table
+}
+
+// ================== TEST DELETE OPERATION ================== //
+
 var query_2 = [type = "query", query_type = "delete", collection = nosql, statement = "{ }"]
 
-var result_2 = query_2.execute()
+var result_4 = query_2.execute()
 
-if(result_2) println "\\nCollection dropped"
+if(result_4) println "\\nCollection dropped"
