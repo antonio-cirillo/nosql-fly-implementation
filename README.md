@@ -361,7 +361,41 @@ case "query":{
 				for(int ___indexForJsonArray = 0; ___indexForJsonArray < ___«dec.name»JsonArrayQuery.length(); ___indexForJsonArray++) 
 					«dec.name».add(Document.parse(___«dec.name»JsonArrayQuery.get(___indexForJsonArray).toString()));'''
 			}
-		} else {
+		} else if(query_type.equals("update")) { 
+			if((dec.right as DeclarationObject).features.size() == 5)
+				return '''
+					BsonDocument «dec.name»_filter = Document.parse(«IF 
+						((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
+					»
+					«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»
+					« ELSE » 
+						"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«ENDIF»).toBsonDocument();
+										
+					BsonDocument «dec.name» = Document.parse(«IF 
+						((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s.nullOrEmpty
+					»
+					«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_f.name»
+					« ELSE » 
+						"«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s»"«ENDIF»).toBsonDocument();
+					'''	
+		} else if(query_type.equals("replace")) {
+			if((dec.right as DeclarationObject).features.size() == 5)
+				return '''
+				BsonDocument «dec.name»_filter = Document.parse(«IF 
+					((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
+				»
+					«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»
+				« ELSE » 
+					"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«ENDIF»).toBsonDocument();
+										
+				Document «dec.name» = Document.parse(«IF 
+					((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s.nullOrEmpty
+				»
+					«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_f.name»
+				« ELSE » 
+					"«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s»"«ENDIF»);
+				'''
+		}	else {
 			return '''
 			BsonDocument «dec.name» = Document.parse(«IF 
 				((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
@@ -403,6 +437,12 @@ case "query":{
 			} else if(queryType.equals("insert")) {
 				return '''
 				«connection.name».insertMany(«expression.target.name»);'''
+			} else if(queryType.equals("update")) {
+				return '''
+				«connection.name».updateMany(«expression.target.name»_filter, «expression.target.name»);'''
+			} else if(queryType.equals("replace")) {
+				return '''
+				«connection.name».replaceOne(«expression.target.name»_filter, «expression.target.name»);'''
 			}
 		}
 	}					
