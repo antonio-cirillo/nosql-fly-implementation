@@ -1,0 +1,73 @@
+var local = [type = "smp", nthread = 2]
+
+var pathOfCSV = "/home/devcirillo/Documenti/GitHub/nosql-fly-implementation/FLY-MongoDB/weatherHistory.csv"
+
+var weatherCSV = [type = "file", path = pathOfCSV, ext = "csv"]
+
+var nosql = [type = "nosql", client = "", database = "mydb", collection = "weather"]
+
+var insertWeatherCSV = [type = "query", query_type = "insert", collection = nosql, 
+	statement = weatherCSV, from = "0", to = "150"]
+	
+insertWeatherCSV.execute()
+
+var nosql_2 = [type = "nosql", client = "", database = "mydb", collection = "weatherTmp"]
+
+var insertWeatherCSV_2 = [type = "query", query_type = "insert", collection = nosql_2, 
+	statement = weatherCSV, from = "100", to = "155"]
+
+insertWeatherCSV_2.execute()
+
+// ================== FINISH POPULATION DB ================== //
+
+var selectWeather = [type = "query", query_type = "select", collection = nosql, statement = "{ }"]
+
+var result = selectWeather.execute()
+
+func deleteDuplicate(result) {
+	
+	var nosql = [type = "nosql", client = "", database = "mydb", collection = "weatherTmp"]
+		
+	for table in result {
+		
+		for x in table {
+			
+			var statement = "{'Formatted Date': { $eq: '" + x[12] as String + "' } }"
+			
+			var delete = [type = "query", query_type = "delete", collection = nosql, statement = statement]	
+			
+			var flag = delete.execute() 
+			
+		} 
+				
+	}
+	
+}
+
+func queryDatabase() {
+	
+	var nosql = [type = "nosql", client = "", database = "mydb", collection = "weatherTmp"]
+	
+	var selectWeather = [type = "query", query_type = "select", collection = nosql, statement = "{ }"]
+
+	var result = selectWeather.execute()
+	
+	for table in result {
+		
+		println table
+		
+	}
+	
+}
+
+fly deleteDuplicate in result on local thenall queryDatabase
+
+// ================== DROP DATABASE ================== //
+
+var delete_1 = [type = "query", query_type = "delete", collection = nosql, statament = "{ }"]
+
+var flag_1 = delete_1.execute()
+
+var delete_2 = [type = "query", query_type = "delete", collection = nosql_2, statament = "{ }"]
+
+var flag_2 = delete_2.execute()
