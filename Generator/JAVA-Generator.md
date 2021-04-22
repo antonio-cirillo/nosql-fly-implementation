@@ -129,24 +129,25 @@ case "nosql":{
 	var collection = ((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s
 	if((dec.right as DeclarationObject).features.size() < 5) {
 		return '''
-		try {
-			Properties props = new Properties();
-			props.put("log4j.rootLogger", "INFO, stdout");
-			props.put("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");
-			props.put("log4j.appender.stdout.Target", "System.out");
-			props.put("log4j.appender.stdout.layout", "org.apache.log4j.PatternLayout");
-			props.put("log4j.appender.stdout.layout.ConversionPattern", "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n");
-			FileOutputStream outputStream = new FileOutputStream("log4j.properties");
-			props.store(outputStream, "This is a default properties file");
-			System.out.println("Default properties file created.");
-		} catch (IOException e) {
-			System.out.println("Default properties file not created.");
-			e.printStackTrace();
+		if(!(new File("log4j.properties").exists())) {
+			try {
+				Properties props = new Properties();
+				props.put("log4j.rootLogger", "INFO, stdout");
+				props.put("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");
+				props.put("log4j.appender.stdout.Target", "System.out");
+				props.put("log4j.appender.stdout.layout", "org.apache.log4j.PatternLayout");
+				props.put("log4j.appender.stdout.layout.ConversionPattern", "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n");
+				FileOutputStream outputStream = new FileOutputStream("log4j.properties");
+				props.store(outputStream, "This is a default properties file");
+				System.out.println("Default properties file created.");
+			} catch (IOException e) {
+				System.out.println("Default properties file not created.");
+				e.printStackTrace();
+			}
 		}
-									
-		String log4jConfPath = "log4j.properties";
-		PropertyConfigurator.configure(log4jConfPath);
-		
+			
+		PropertyConfigurator.configure("log4j.properties");
+					
 		MongoCollection <Document> «dec.name» = MongoClients.create().getDatabase("«database»").getCollection("«collection»");
 		'''
 	} else {
@@ -193,7 +194,7 @@ case "query":{
 		if(query_type.equals("select")){
 			typeSystem.get(scope).put(dec.name, "List <Table>")
 		} else if(query_type.equals("delete")){
-			typeSystem.get(scope).put(dec.name, "boolean")
+			typeSystem.get(scope).put(dec.name, "long")
 		}
 		if(query_type.equals("insert")) {
 			if(((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty) {
@@ -317,7 +318,7 @@ case "query":{
 		var connection = (((expression.target.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f as VariableDeclaration)
 		var databaseType = (connection.right as DeclarationObject).features.get(0).value_s
 		if(databaseType.equals("sql")) {
-			if(queryType.equals("update")){
+			if(queryType.equals("update")) {
 				return '''«(expression.target as VariableDeclaration).name».executeUpdate();'''
 			} else if(queryType.equals("value")){
 				return '''Table.read().db(
@@ -328,13 +329,13 @@ case "query":{
 					«(expression.target as VariableDeclaration).name».executeQuery()
 					);'''
 			}
-		} else if(databaseType.equals("nosql")){
+		} else if(databaseType.equals("nosql")) {
 			if(queryType.equals("select")) {
 				return '''
 					__generateTableFromNoSQLQuery(«connection.name».find(«expression.target.name»).cursor());'''
 			} else if(queryType.equals("delete")) {
 				return '''
-				(«connection.name».deleteMany(«expression.target.name»).getDeletedCount() > 0) ? true : false;'''
+				«connection.name».deleteMany(«expression.target.name»).getDeletedCount();'''
 			} else if(queryType.equals("insert")) {
 				return '''
 				«connection.name».insertMany(«expression.target.name»);'''
@@ -349,12 +350,43 @@ case "query":{
 	}					
 }
 ```
+All'interno della funzione `generateLocalFlyFunction`.
+```java
+else if ((call.input as FunctionInput).f_index instanceof VariableLiteral &&
+		typeSystem.get(scope).get(((call.input as FunctionInput).f_index as VariableLiteral).variable.name) != null &&
+		typeSystem.get(scope).get(((call.input as FunctionInput).f_index as VariableLiteral).variable.name).equals("List <Table>")) {
+	s+='''
+	final int __numThread = (Integer) __fly_environment.get("«call.environment.name»").get("nthread");
+	ArrayList <ArrayList <Table>> __list_data_«call.target.name» = new ArrayList<> ();
+	for(int __i = 0; __i < __numThread; ++__i)
+		__list_data_«call.target.name».add(new ArrayList <Table> ());
+	for(int __j = 0; __j < «generateArithmeticExpression((call.input as FunctionInput).f_index,scope)».size(); ++__j) {
+		Table ___table = «generateArithmeticExpression((call.input as FunctionInput).f_index,scope)».get(__j);
+		for(int __i = 0; __i < __numThread; ++__i) 
+			__list_data_«call.target.name».get(__i).add(___table.emptyCopy());
+		for(int __i = 0; __i < ___table.rowCount(); ++__i)
+			__list_data_«call.target.name».get(__i % __numThread).get(__j).addRow(__i, ___table);
+	}
+	for(int __i = 0; __i < __numThread; ++__i) {
+	final ArrayList <Table> __tables = __list_data_«call.target.name».get(__i);
+	Future<Object> __f = __thread_pool_«call.environment.name».submit(new Callable<Object>() {
+		public Object call() throws Exception {
+			Object __ret = «call.target.name»(__tables);
+			return __ret;
+		}
+	});
+	«call.target.name»_«func_ID»_return.add(__f);
+	}
+	'''
+}
+```
 All'interno della funzione `generateFor` è stato inserito il meccanismo di iterazione da applicare sulle variabili di tipo `List <Table>`.
 ```java
 else if(typeSystem.get(scope).get((object as VariableLiteral).variable.name).equals("List <Table>")) {
 	var name = (object as VariableLiteral).variable.name;
+	(indexes.indices.get(0) as VariableDeclaration).typeobject='var'
 	var index_name = (indexes.indices.get(0) as VariableDeclaration).name
-	typeSystem.get(scope).put(index_name,name);
+	typeSystem.get(scope).put(index_name, "Table");
 	return '''
 	for(Table «index_name» : «name») {
 		«IF body instanceof BlockExpression»
@@ -386,7 +418,7 @@ else if (type.equals("query")){
 		if(queryType.equals("select")){
 			return "List <Table>"
 		} else {
-			return "boolean"
+			return "long"
 		}
 	}
 } 
