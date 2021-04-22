@@ -74,4 +74,4 @@ var query_2 = [type = "query", query_type = "delete", collection = nosql, statem
 
 var result_4 = query_2.execute()
 
-if(result_4) println "\\nCollection dropped"
+if(result_4 > 0) println "\\nCollection dropped"

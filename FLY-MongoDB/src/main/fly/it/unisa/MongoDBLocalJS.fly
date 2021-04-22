@@ -57,7 +57,7 @@ func queryDatabase() {
 		println table
 		
 	}
-	
+		
 }
 
 fly deleteDuplicate in result on local thenall queryDatabase
@@ -66,8 +66,8 @@ fly deleteDuplicate in result on local thenall queryDatabase
 
 var delete_1 = [type = "query", query_type = "delete", collection = nosql, statament = "{ }"]
 
-var flag_1 = delete_1.execute()
+delete_1.execute()
 
 var delete_2 = [type = "query", query_type = "delete", collection = nosql_2, statament = "{ }"]
 
-var flag_2 = delete_2.execute()
+delete_2.execute()
