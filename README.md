@@ -147,11 +147,4 @@ Mostriamo come ad esempio possiamo eliminare tutti gli studenti all'interno dell
 ```
 var deleteStudents = [type = "query", type_query = "delete", collection = studentCollection, statement = "{ 'address.city': 'Battipaglia' }]
 ```
-Eseguendo la query, sempre utilizzando il metodo `execute()`, otterremo come valore di ritorno un booleano, pari a `true` se è stato eliminato almeno un elemento all'interno della query, `false` altrimenti.  
-Un possibile utilizzo del valore di ritorno, potrebbe essere:
-```
-if(deleteStudents.execute())
-	println "E' stato cancellato qualcosa!"
-else
-	println "Non è stato cancellato niente."
-```
+Eseguendo la query, sempre utilizzando il metodo `execute()`, otterremo come valore di ritorno il numero di elementi che sono stati elementi dalla collezione.
