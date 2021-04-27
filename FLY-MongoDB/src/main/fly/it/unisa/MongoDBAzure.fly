@@ -1,0 +1,9 @@
+var local = [type="smp",nthread=2]
+
+var cloud = [type="azure", clientID="", tenantID="", secret_key="", subscriptionID="", region="West Europe", language="nodejs", threads=2, seconds=300]
+
+func connectionDatabase() {
+	var nosql = [type = "nosql", client = "ajfnsj", database = "mydb", collection = "weather"]
+}
+
+fly connectionDatabase in [0:1] on cloud

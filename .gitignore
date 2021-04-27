@@ -2,3 +2,6 @@
 FLY-MongoDB/log4j.properties
 FLY-MongoDB/src-gen/MongoDBLocalJS.java
 FLY-MongoDB/src-gen/MongoDBFLYLocal.java
+FLY-MongoDB/src-gen/connectionDatabase_cloud_deploy.sh
+FLY-MongoDB/src-gen/connectionDatabase_cloud_undeploy.sh
+FLY-MongoDB/src-gen/MongoDBAzure.java
