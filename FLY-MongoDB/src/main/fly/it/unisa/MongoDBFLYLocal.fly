@@ -1,4 +1,5 @@
 var local = [type = "smp", nthread = 2]
+// var cloud = [type="azure", clientID="", tenantID="", secret_key="", subscriptionID="", region="West Europe", language="nodejs", threads=2, seconds=300]
 
 var pathOfCSV = "/home/devcirillo/Documenti/GitHub/nosql-fly-implementation/FLY-MongoDB/weatherHistory.csv"
 
