@@ -27,6 +27,71 @@ case "nosql":{
 	const «exp.name» = __«exp.name»Clinet.db("«database»").collection("«collection»");
 	'''
 }
+
+case "query":{
+	var connection = (((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f as VariableDeclaration)	
+	var databaseType = (connection.right as DeclarationObject).features.get(0).value_s
+	if(databaseType.equals("sql")) {
+		return '''
+		var «exp.name» = «
+		IF ((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
+		»«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»«
+		ELSE
+		»"«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«
+		ENDIF»;
+		'''	 
+	} else if(databaseType.equals("nosql")) {
+		return '''
+		const «exp.name» = «
+		IF ((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
+		»JSON.parse(«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»)«
+		ELSE 
+		»JSON.parse("«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»")«
+		ENDIF»;
+		
+		'''
+	}
+}
+```
+All'interno della funzione `generateJsVariableFunction`.
+```node
+case "query":{
+	var queryType = (expression.target.right as DeclarationObject).features.get(1).value_s
+	if(expression.feature.equals("execute")){
+		var connection = (expression.target.right as DeclarationObject).features.get(2).value_f.name
+		var databaseType = ((((expression.target.right as DeclarationObject).features.get(2) as DeclarationFeature)
+			.value_f as VariableDeclaration).right as DeclarationObject).features.get(0).value_s
+		if(databaseType.equals("sql")) {
+			if (queryType.equals("value")){
+				return '''
+				JSON.stringify(
+					await (__util.promisify(«connection».query).bind(«connection»))(
+				«IF(expression.target.right as DeclarationObject).features.get(3).value_s.nullOrEmpty»
+					«(expression.target.right as DeclarationObject).features.get(3).value_f.name»
+				«ELSE» 
+					"«(expression.target.right as DeclarationObject).features.get(3).value_s»"
+				«ENDIF»
+					)
+				).match(/[+-]?\d+(?:\.\d+)?/g);
+			''' 
+			} else {
+				return '''
+				await (__util.promisify(«connection».query).bind(«connection»))(
+				«IF(expression.target.right as DeclarationObject).features.get(3).value_s.nullOrEmpty»
+					«(expression.target.right as DeclarationObject).features.get(3).value_f.name»
+				«ELSE» 
+					"«(expression.target.right as DeclarationObject).features.get(3).value_s»"
+				«ENDIF»
+				);
+				''' 
+			}
+		} else if(databaseType.equals("nosql")) {
+			return '''
+							
+			'''
+		}
+	}
+}
 ```
 All'interno delle funzioni `AWSDeploy`, `AWSDebugDeploy`.
 ```bash
