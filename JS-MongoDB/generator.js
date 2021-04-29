@@ -15,9 +15,29 @@ const func = async () => {
 	await __nosqlClient.connect();
 	
 	const nosql = __nosqlClient.db("mydb").collection("weather");
-	const query = JSON.parse("{ }");
+
+	const result = async () => {
+
+		const features = [];
+		const objects = [];
+
+		const ___result = nosql.find(JSON.parse("{ }"));
+		
+		await ___result.forEach((obj) => {
+			objects.push(obj);
+			for(const f in obj)
+				features.push(f);
+		});
+
+		return await new __dataframe(
+			objects, 
+			features
+		);
+		
+	} 
 	
-	var result = await nosql.find(query);
+	(await result()).show();
+
 	await __nosqlClient.close();
 }
 
