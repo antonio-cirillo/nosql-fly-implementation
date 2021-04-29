@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "csv": "^5.5.0",
+    "dataframe-js": "^1.4.4",
     "mongodb": "^3.6.6"
   }
 }
