@@ -17,7 +17,7 @@ case "nosql":{
 	  «IF client.value_s.nullOrEmpty»
 	  «client.value_f.name»,
 	  «ELSE»
-	  «client.value_s»,
+	  "«client.value_s»",
 	  «ENDIF»
 		{ useUnifiedTopology: true }
 	);
@@ -86,9 +86,22 @@ case "query":{
 				''' 
 			}
 		} else if(databaseType.equals("nosql")) {
-			return '''
-							
-			'''
+			if(queryType.equals("select")) {
+				return '''
+				await «connection».find(«expression.target.name»);'''
+			} else if(queryType.equals("delete")) {
+				return '''
+				await «connection».deleteMany(«expression.target.name»);'''
+			} else if(queryType.equals("insert")) {
+				return '''
+				await «connection».insertMany(«expression.target.name»);'''
+//			} else if(queryType.equals("update")) {
+//				return '''
+//				«connection».updateMany(«expression.target.name»_filter, «expression.target.name»);'''
+//			} else if(queryType.equals("replace")) {
+//				return '''
+//				«connection».replaceOne(«expression.target.name»_filter, «expression.target.name»);'''
+			}
 		}
 	}
 }
