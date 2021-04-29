@@ -1,9 +1,16 @@
-var local = [type="smp",nthread=2]
+var local = [type = "smp", nthread=2]
 
-var cloud = [type="azure", clientID="", tenantID="", secret_key="", subscriptionID="", region="West Europe", language="nodejs", threads=2, seconds=300]
+var cloud = [type = "azure", clientID = "", tenantID = "", secret_key = "", 
+	subscriptionID = "", region = "West Europe", language = "nodejs", threads = 2, seconds = 300]
 
 func connectionDatabase() {
-	var nosql = [type = "nosql", client = "ajfnsj", database = "mydb", collection = "weather"]
+	
+	var nosql = [type = "nosql", client = "mongodb://127.0.0.1:27017/", database = "mydb", collection = "weather"]
+	
+	var query = [type = "query", query_type = "select", collection = nosql, statement = "{ }"]
+	
+	var result = query.execute()
+
 }
 
 fly connectionDatabase in [0:1] on cloud
