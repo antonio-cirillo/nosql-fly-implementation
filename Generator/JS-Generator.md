@@ -22,9 +22,9 @@ case "nosql":{
 		{ useUnifiedTopology: true }
 	);
 							
-	await __«exp.name»Clinet.connect();
+	await __«exp.name»Client.connect();
 				
-	const «exp.name» = __«exp.name»Clinet.db("«database»").collection("«collection»");
+	const «exp.name» = __«exp.name»Client.db("«database»").collection("«collection»");
 	'''
 }
 
