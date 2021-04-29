@@ -1,22 +1,24 @@
+var __dataframe = require("dataframe-js").DataFrame;
 var __nosql = require("mongodb");
 
-const uri = "mongodb://127.0.0.1:27017/";
+const func = async () => {
 
-const __client = new __nosql.MongoClient(
-    uri,
-    { useUnifiedTopology: true }
-);
+    const string = "{ }";
+    const event = JSON.parse(string);
+    console.log(`Event: ${string}`);
 
-async function test() {
-    
-    await __client.connect();
-
-    var __collection = __client.db("mydb").collection("weather");
-
-    console.log(await __collection.countDocuments());
-
-    await __client.close();
-
+	const __nosqlClient = new __nosql.MongoClient(
+		"mongodb://127.0.0.1:27017/",
+		{ useUnifiedTopology: true }
+	);
+	
+	await __nosqlClient.connect();
+	
+	const nosql = __nosqlClient.db("mydb").collection("weather");
+	const query = JSON.parse("{ }");
+	
+	var result = await nosql.find(query);
+	await __nosqlClient.close();
 }
 
-test();
+func();
