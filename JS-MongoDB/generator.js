@@ -1,5 +1,7 @@
 var __dataframe = require("dataframe-js").DataFrame;
 var __nosql = require("mongodb");
+var __fs = require("fs")
+var __parse = require("csv-parse");
 
 const func = async () => {
 
@@ -16,7 +18,7 @@ const func = async () => {
 	
 	const nosql = __nosqlClient.db("mydb").collection("weather");
 
-	const result = async () => {
+	/* const result = async () => {
 
 		const features = [];
 		const objects = [];
@@ -34,11 +36,43 @@ const func = async () => {
 			features
 		);
 		
-	} 
+	} */
+
+	const result = async () => {
+
+		let features;
+		const objects = [];
+		let i = 0;
+
+		await new Promise((resolve) => {
+			__fs.createReadStream("C:\\Users\\devci\\Documents\\GitHub\\nosql-fly-implementation\\FLY-MongoDB\\weatherHistory.csv")
+			.pipe(__parse())
+			.on('data', (row) => {
+				if(i == 0) {
+					features = row;
+					++i;
+				}					
+				else if(i >= 1 && i <= 5) {
+					console.log(row);
+					objects.push(row);
+					++i;
+				}
+			})
+			.on('end', () => {
+				resolve();
+			});
+		});
+		
+		return await new __dataframe(
+			objects, 
+			features
+		);
+
+	}
 	
 	(await result()).show();
 
 	await __nosqlClient.close();
-}
+  }
 
-func();
+func(); 
