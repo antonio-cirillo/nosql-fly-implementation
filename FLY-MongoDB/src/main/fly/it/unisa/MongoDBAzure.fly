@@ -3,14 +3,25 @@ var local = [type = "smp", nthread=2]
 var cloud = [type = "azure", clientID = "", tenantID = "", secret_key = "", 
 	subscriptionID = "", region = "West Europe", language = "nodejs", threads = 2, seconds = 300]
 
-func connectionDatabase() {
+func insertIntoDB() {
 	
 	var nosql = [type = "nosql", client = "mongodb://127.0.0.1:27017/", database = "mydb", collection = "weather"]
 	
-	var query = [type = "query", query_type = "select", collection = nosql, statement = "{ }"]
+	var pathOfCSV = "/home/devcirillo/Documenti/GitHub/nosql-fly-implementation/FLY-MongoDB/weatherHistory.csv"
+
+	var weatherCSV = [type = "file", path = pathOfCSV, ext = "csv"]
 	
-	var result = query.execute()
+	var insertWeatherCSV = [type = "query", query_type = "insert", collection = nosql, 
+		statement = weatherCSV]
+	
+	insertWeatherCSV.execute()
+	
+	var statement = "{ \\\"name\\\": \\\"Antonio\\\", \\\"surname\\\": \\\"Cirillo\\\", \\\"age\\\": 21 }"
+	
+	var insertStudent = [type = "query", query_type = "insert", collection = nosql, statement = statement]
+		
+	insertStudent.execute()
 
 }
 
-fly connectionDatabase in [0:1] on cloud
+fly insertIntoDB in [0:1] on cloud
