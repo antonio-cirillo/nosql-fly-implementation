@@ -12,15 +12,22 @@ func insertIntoDB() {
 	var weatherCSV = [type = "file", path = pathOfCSV, ext = "csv"]
 	
 	var insertWeatherCSV = [type = "query", query_type = "insert", collection = nosql, 
-		statement = weatherCSV]
+		statement = weatherCSV, from = "100", to = "155"]
 	
 	insertWeatherCSV.execute()
 	
-	var statement = "{ \\\"name\\\": \\\"Antonio\\\", \\\"surname\\\": \\\"Cirillo\\\", \\\"age\\\": 21 }"
+	/* var statement = "{ \\\"name\\\": \\\"Antonio\\\", \\\"surname\\\": \\\"Cirillo\\\", \\\"age\\\": 21 }"
 	
 	var insertStudent = [type = "query", query_type = "insert", collection = nosql, statement = statement]
 		
-	insertStudent.execute()
+	insertStudent.execute() */ // TEST PASSED!
+	
+	var statement = "[ " + "{ \\\"name\\\": \\\"Antonio\\\", \\\"surname\\\": \\\"Cirillo\\\", \\\"age\\\": 21 }"
+		+ ", " + "{  \\\"name\\\": \\\"Giovanni\\\", \\\"surname\\\": \\\"Rapa\\\", \\\"age\\\": 21 }" + " ]"
+		
+	var insertStudents = [type = "query", query_type = "insert", collection = nosql, statement = statement]
+	
+	insertStudents.execute()
 
 }
 
