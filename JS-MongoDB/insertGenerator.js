@@ -13,7 +13,7 @@ const func = async () => {
 	await __nosqlClient.connect();
 	
 	const nosql = __nosqlClient.db("mydb").collection("weather");
-	var pathOfCSV = "/home/devcirillo/Documenti/GitHub/nosql-fly-implementation/FLY-MongoDB/weatherHistory.csv"
+	var pathOfCSV = "C:\\Users\\devci\\Documents\\GitHub\\nosql-fly-implementation\\FLY-MongoDB\\weatherHistory.csv"
 	/* var weatherCSVClient = containerClient.getBlobClient(pathOfCSV);
 	var weatherCSV = await weatherCSVClient.download(); */ // -> Fly code gen.
 
@@ -31,13 +31,13 @@ const func = async () => {
 				if(i == 0) {
 					features = row;
 					++i;
-				} else if(i >= 100 && i <= 155) {
+				} else if(i >= 1 && i <= 10) {
 					let object = { };
 					for([index, value] of features.entries())
 						object[features[index]] = row[index];
 					objects.push(object);
 					++i;
-				} else if(i < 100)
+				} else if(i < 1)
 					++i;
 			})
 			.on("end", () => {
@@ -66,9 +66,9 @@ const func = async () => {
 	else
 		insertStudents = JSON.parse("[" + statement + "]");
 	
-	await nosql.insertMany(insertStudents);
+	await nosql.insertMany(insertStudents); // TEST PASSED ! -> Insert multi objects.
 
-	await __nosqlClient.close(); // TEST PASSED ! -> Insert multi objects.
+	await __nosqlClient.close(); 
 
 }
 
