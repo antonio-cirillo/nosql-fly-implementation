@@ -7,3 +7,4 @@ FLY-MongoDB/src-gen/connectionDatabase_cloud_undeploy.sh
 FLY-MongoDB/src-gen/MongoDBAzure.java
 FLY-MongoDB/src-gen/insertIntoDB_cloud_deploy.sh
 FLY-MongoDB/src-gen/insertIntoDB_cloud_undeploy.sh
+*.sh
