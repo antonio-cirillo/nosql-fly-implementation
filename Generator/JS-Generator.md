@@ -44,9 +44,51 @@ case "query":{
 		'''	 
 	} else if(databaseType.equals("nosql")) {
 		var query_type = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s						
-		if(query_type.equals("select"))
+		if(query_type.equals("select")) {
 			typeSystem.get(scope).put(exp.name, "List <Table>")
-		if(query_type.equals("insert")) {
+			return '''
+			const «exp.name» = async () => {
+						
+				let features = [];
+				let objects = [];
+										
+				await «collection».find(JSON.parse(«IF((exp.right as DeclarationObject).features.get(3).value_s.nullOrEmpty)
+				»«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»«
+				ELSE
+				»"«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«
+				ENDIF»)).forEach((object) => {
+											
+				const keys = Object.keys(object);
+				const n = features.length;
+				let i;
+											
+				for(i = 0; i < n; ++i)
+					if(!(JSON.stringify(features[i]) !== JSON.stringify(keys)))
+							break;
+											
+				if(i === n) {
+					features.push(keys);
+					const __array = [];
+					__array.push(object);
+					objects.push(__array);
+				} else
+					objects[i].push(object);
+											
+				});
+										
+				let tables = [];
+										
+				for(i = 0; i < features.length; ++i)
+					tables.push(new __dataframe(
+						objects[i],
+						features[i]
+					));
+											
+				return tables;
+			}
+									
+			'''
+		} if(query_type.equals("insert")) {
 			if(((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty) {
 				if((((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f as VariableDeclaration).right instanceof DeclarationObject) {
 					var variables = (((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f as VariableDeclaration).right as DeclarationObject
@@ -201,6 +243,11 @@ case "query":{
 				return '''
 				await «connection».insertMany(«expression.target.name»);
 								
+				'''
+			} else if(queryType.equals("select")) {
+				return '''
+				(await «expression.target.name»());
+					
 				'''
 			}
 		}
