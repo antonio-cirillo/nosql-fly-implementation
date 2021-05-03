@@ -13,7 +13,7 @@ const func = async () => {
 	await __nosqlClient.connect();
 	
 	const nosql = __nosqlClient.db("mydb").collection("weather");
-	var pathOfCSV = "C:\\Users\\devci\\Documents\\GitHub\\nosql-fly-implementation\\FLY-MongoDB\\weatherHistory.csv"
+	var pathOfCSV = "/home/devcirillo/Documenti/GitHub/nosql-fly-implementation/FLY-MongoDB/weatherHistory.csv"
 	/* var weatherCSVClient = containerClient.getBlobClient(pathOfCSV);
 	var weatherCSV = await weatherCSVClient.download(); */ // -> Fly code gen.
 
