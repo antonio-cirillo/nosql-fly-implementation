@@ -32,3 +32,17 @@ func insertIntoDB() {
 }
 
 fly insertIntoDB in [0:1] on cloud
+
+func selectFromDB() {
+	
+	var nosql = [type = "nosql", client = "mongodb://127.0.0.1:27017/", database = "mydb", collection = "weather"]
+	
+	var statement = "{ }"
+	
+	var select = [type = "query", query_type = "select", collection = nosql, statement = statement]
+	
+	var result = select.execute()
+		
+}
+
+fly selectFromDB in [0:1] on cloud
