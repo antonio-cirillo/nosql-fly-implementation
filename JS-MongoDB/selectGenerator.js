@@ -53,10 +53,13 @@ const func = async () => {
 	
 	var result = (await select()); // => TEST PASSED! -> Retrive list of dataframe from select operation.
 
-    for(const table of result) {
-        table.show();
-        console.log();
-    }
+	for(let table of result) {
+		table = table.toArray();
+		for(var __column in table) {
+			var column = table[__column]
+			console.log(column[2]) 
+		}
+	} // => TEST PASSED! -> Foreach on list of table, with set scope on table "Table".
 
     await __nosqlClient.close(); 
     
