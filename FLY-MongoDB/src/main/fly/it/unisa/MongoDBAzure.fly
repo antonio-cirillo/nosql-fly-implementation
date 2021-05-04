@@ -39,10 +39,59 @@ func selectFromDB() {
 	
 	var statement = "{ }"
 	
-	var select = [type = "query", query_type = "select", collection = nosql, statement = statement]
+	var selectQuery = [type = "query", query_type = "select", collection = nosql, statement = statement]
 	
-	var result = select.execute()
+	var result = selectQuery.execute()
+	
+	for table in result {
+		
+		for column in table {
+			
+			println column[2]
+			
+		}
+		
+	}
 		
 }
 
 fly selectFromDB in [0:1] on cloud
+
+
+func updateAndReplaceData() {
+	
+	var nosql = [type = "nosql", client = "mongodb://127.0.0.1:27017/", database = "mydb", collection = "weather"]
+	
+	var updateFilter = "{ \\\"name\\\": \\\"Antonio\\\" }"
+	
+	var updateStatement = "{ \\\"$set\\\": { \\\"name\\\": \\\"Marcello\\\" } }"
+	
+	var updateQuery = [type = "query", query_type = "update", collection = nosql, filter = updateFilter, statement = updateStatement]
+	
+	updateQuery.execute()
+	
+	var replaceFilter = "{ \\\"name\\\": \\\"Marcello\\\" }"
+	
+	var replaceStatement = "{ \\\"name\\\": \\\"Antonio\\\", \\\"surname\\\": \\\"Montella\\\" }"
+	
+	var replaceQuery = [type = "query", query_type = "replace", collection = nosql, filter = replaceFilter, statement = replaceStatement]
+	
+	replaceQuery.execute()	
+}
+
+fly updateAndReplaceData in [0:1] on cloud
+
+func dropDB() {
+	
+	var nosql = [type = "nosql", client = "mongodb://127.0.0.1:27017/", database = "mydb", collection = "weather"]
+	
+	var deleteQuery = [type = "query", query_type = "delete", collection = nosql, statement = "{ }"]
+	
+	var result = deleteQuery.execute()
+	
+	if(result > 0)
+		println "One or more item(s) was eliminated"
+	
+}
+
+fly dropDB in [0:1] on cloud
