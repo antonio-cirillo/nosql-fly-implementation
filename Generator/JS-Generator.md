@@ -189,8 +189,25 @@ case "query":{
 			'''
 			}
 		} else {
-			return ''''''				
-		}								
+			if((exp.right as DeclarationObject).features.size() == 4) {
+			return '''
+			const «exp.name» = JSON.parse(«IF
+			((exp.right as DeclarationObject).features.get(3).value_s.nullOrEmpty)»«(exp.right as DeclarationObject).features.get(3).value_f.name»«
+			ELSE»"«(exp.right as DeclarationObject).features.get(3).value_s»"«ENDIF»);
+										
+			'''
+		} else 
+			return '''
+			const «exp.name»Filter = JSON.parse(«IF
+			((exp.right as DeclarationObject).features.get(3).value_s.nullOrEmpty)»«(exp.right as DeclarationObject).features.get(3).value_f.name»«
+			ELSE»"«(exp.right as DeclarationObject).features.get(3).value_s»"«ENDIF»);
+								
+			const «exp.name» = JSON.parse(«IF
+			((exp.right as DeclarationObject).features.get(4).value_s.nullOrEmpty)»«(exp.right as DeclarationObject).features.get(4).value_f.name»«
+			ELSE»"«(exp.right as DeclarationObject).features.get(4).value_s»"«ENDIF»);
+										
+			'''				
+		}							
 	}
 }
 ```
@@ -249,10 +266,44 @@ case "query":{
 				(await «expression.target.name»());
 					
 				'''
+			} else if(queryType.equals("delete")) {
+				return '''
+				(await «connection».deleteMany(«expression.target.name»)).deletedCount
+					
+				'''
+			} else if(queryType.equals("update")) {
+				return '''
+				(await «connection».updateMany(«expression.target.name»Filter, «expression.target.name»));
+								
+				'''
+			} else if(queryType.equals("replace")) {
+				return '''
+				(await «connection».replaceOne(«expression.target.name»Filter, «expression.target.name»));
+				
+				'''
 			}
 		}
 	}
 } 				
+```
+All'interno della funzione `generateJsForExpression`.
+```node
+else if(typeSystem.get(scope).get((exp.object as VariableLiteral).variable.name).equals("List <Table>")) {
+	typeSystem.get(scope).put((exp.index.indices.get(0) as VariableDeclaration).name, "Table");
+	return '''
+	for(let «(exp.index.indices.get(0) as VariableDeclaration).name» of «(exp.object as VariableLiteral).variable.name») {
+		«(exp.index.indices.get(0) as VariableDeclaration).name» = «(exp.index.indices.get(0) as VariableDeclaration).name».toArray();
+		«IF exp.body instanceof BlockExpression»
+			«FOR e: (exp.body as BlockExpression).expressions»
+				«generateJsExpression(e,scope)»
+			«ENDFOR»
+		«ELSE»
+			«generateJsExpression(exp.body,scope)»
+		«ENDIF»
+	}
+		
+	'''
+}
 ```
 All'interno delle funzioni `AWSDeploy`, `AWSDebugDeploy`.
 ```bash
