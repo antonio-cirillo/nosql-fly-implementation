@@ -1,7 +1,11 @@
+All'interno della funzione `generateBodyPy`.
+```python
+from pymongo import MongoClient
+```
 All'interno della funzione `generatePyExpression`.
 ```python
 case "nosql": {
-	var client = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature)
+	var client = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
 	var database = ((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
 	var collection = ((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s
 	return '''
@@ -39,9 +43,17 @@ case "query":{
 							var from = ((exp.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s
 							var to = ((exp.right as DeclarationObject).features.get(5) as DeclarationFeature).value_s
 							return '''
+							«exp.name» = pd.read_csv(«IF
+							(variables.features.get(1).value_s.nullOrEmpty)»«variables.features.get(1).value_f.name»«
+							ELSE»"«variables.features.get(1).value_s»"«ENDIF», skiprows = range(1, «from»), nrows = («to» - «from»)).to_dict('records')
+							
 							'''
 						} else {
 							return '''
+							«exp.name» = pd.read_csv(«IF
+							(variables.features.get(1).value_s.nullOrEmpty)»«variables.features.get(1).value_f.name»«
+							ELSE»"«variables.features.get(1).value_s»"«ENDIF»).to_dict('records')
+							
 							'''
 						}
 					}
@@ -68,4 +80,33 @@ case "query":{
 		} 
 	}
 }
+```
+All'interno della funzione `generatePyVariableFunction`.
+```python
+case "query":{
+					var queryType = (expression.target.right as DeclarationObject).features.get(1).value_s
+					var connection = (expression.target.right as DeclarationObject).features.get(2).value_f.name
+					var databaseType = ((((expression.target.right as DeclarationObject).features.get(2) as DeclarationFeature)
+							.value_f as VariableDeclaration).right as DeclarationObject).features.get(0).value_s
+					if(databaseType.equals("sql")) {
+						if(expression.feature.equals("execute")){
+							if (queryType.equals("value")){
+								return '''
+								__cursor«connection».fetchone()[0]
+								''' 
+							}else{
+								return '''
+								«connection».commit()
+							''' 
+							}
+						}
+					} else if(databaseType.equals("nosql")) {
+						if(queryType.equals("insert")) {
+							return '''
+							«connection».insert_many(«expression.target.name»)
+							
+							'''
+						}
+					}
+				} 
 ```
