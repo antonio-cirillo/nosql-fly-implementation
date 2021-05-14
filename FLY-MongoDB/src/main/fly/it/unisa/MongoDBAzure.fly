@@ -2,6 +2,8 @@ var local = [type = "smp", nthread=2]
 
 var cloud = [type = "azure", clientID = "", tenantID = "", secret_key = "", 
 	subscriptionID = "", region = "West Europe", language = "nodejs", threads = 2, seconds = 300]
+var cloud_2 = [type = "azure", clientID = "", tenantID = "", secret_key = "", 
+	subscriptionID = "", region = "West Europe", language = "python", threads = 2, seconds = 300]
 
 func insertIntoDB() {
 	
@@ -31,7 +33,7 @@ func insertIntoDB() {
 
 }
 
-fly insertIntoDB in [0:1] on cloud
+fly insertIntoDB in [0:1] on cloud_2
 
 func selectFromDB() {
 	
