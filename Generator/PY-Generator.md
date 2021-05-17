@@ -62,7 +62,7 @@ case "query":{
 					«exp.name» = ""
 					if «((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»[0] == "[" :
 						«exp.name» = json.loads(«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»)
-					else :
+					else:
 						«exp.name» = json.loads("[" + «((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name» + "]")
 											
 					'''
@@ -72,12 +72,32 @@ case "query":{
 				«exp.name» = """
 				if "«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"[0] == "[" :
 					«exp.name» = json.loads("«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»")
-				else :
+				else:
 					«exp.name» = json.loads("[" + "«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»" + "]")
 								
 				'''
 			}
-		} 
+		} else {
+			if((exp.right as DeclarationObject).features.size() == 4) {
+				return '''
+				«exp.name» = json.loads(«IF
+				((exp.right as DeclarationObject).features.get(3).value_s.nullOrEmpty)»«(exp.right as DeclarationObject).features.get(3).value_f.name»«
+				ELSE»"«(exp.right as DeclarationObject).features.get(3).value_s»"«ENDIF»)
+				
+				'''
+			} else {
+				return '''
+				«exp.name»Filter = json.loads(«IF
+				((exp.right as DeclarationObject).features.get(3).value_s.nullOrEmpty)»«(exp.right as DeclarationObject).features.get(3).value_f.name»«
+				ELSE»"«(exp.right as DeclarationObject).features.get(3).value_s»"«ENDIF»)
+
+				«exp.name» = json.loads(«IF
+				((exp.right as DeclarationObject).features.get(4).value_s.nullOrEmpty)»«(exp.right as DeclarationObject).features.get(4).value_f.name»«
+				ELSE»"«(exp.right as DeclarationObject).features.get(4).value_s»"«ENDIF»)
+
+				'''
+			}
+		}
 	}
 }
 ```
@@ -89,12 +109,12 @@ case "query":{
 					var databaseType = ((((expression.target.right as DeclarationObject).features.get(2) as DeclarationFeature)
 							.value_f as VariableDeclaration).right as DeclarationObject).features.get(0).value_s
 					if(databaseType.equals("sql")) {
-						if(expression.feature.equals("execute")){
-							if (queryType.equals("value")){
+						if(expression.feature.equals("execute")) {
+							if(queryType.equals("value")) {
 								return '''
 								__cursor«connection».fetchone()[0]
 								''' 
-							}else{
+							} else{
 								return '''
 								«connection».commit()
 							''' 
@@ -105,6 +125,21 @@ case "query":{
 							return '''
 							«connection».insert_many(«expression.target.name»)
 							
+							'''
+						} else if(queryType.equals("delete")) {
+							return '''
+							«connection».delete_many(«expression.target.name»).deleted_count
+							
+							'''
+						} else if(queryType.equals("update")) {
+							return '''
+							«connection».update_many(«expression.target.name»Filter, «expression.target.name»)
+							
+							'''
+						} else if(queryType.equals("replace")) {
+							return '''
+							«connection».replace_one(«expression.target.name»Filter, «expression.target.name»)
+								
 							'''
 						}
 					}
