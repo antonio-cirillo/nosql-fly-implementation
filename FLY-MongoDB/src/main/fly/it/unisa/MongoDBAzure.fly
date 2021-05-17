@@ -57,7 +57,7 @@ func selectFromDB() {
 		
 }
 
-fly selectFromDB in [0:1] on cloud
+fly selectFromDB in [0:1] on cloud_2
 
 
 func updateAndReplaceData() {
@@ -81,7 +81,7 @@ func updateAndReplaceData() {
 	replaceQuery.execute()	
 }
 
-fly updateAndReplaceData in [0:1] on cloud
+fly updateAndReplaceData in [0:1] on cloud_2
 
 func dropDB() {
 	
@@ -96,4 +96,4 @@ func dropDB() {
 	
 }
 
-fly dropDB in [0:1] on cloud
+fly dropDB in [0:1] on cloud_2
