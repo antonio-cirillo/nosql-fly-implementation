@@ -9,3 +9,4 @@ FLY-MongoDB/src-gen/insertIntoDB_cloud_deploy.sh
 FLY-MongoDB/src-gen/insertIntoDB_cloud_undeploy.sh
 *.sh
 *.txt
+FLY-MongoDB/src-gen/MongoDBLocalScript.java
