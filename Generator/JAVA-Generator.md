@@ -124,10 +124,9 @@ private static List <Column <?>> ___generateColumns(
 All'interno della funzione `generateVariableDeclaration` è stato aggiunto il meccanismo di dichiarazione di variabili di tipo nosql.
 ```java
 case "nosql":{
-	// var client = ((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
-	var database = ((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
-	var collection = ((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s
-	if((dec.right as DeclarationObject).features.size() < 5) {
+	var database = ((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
+	var collection = ((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
+	if((dec.right as DeclarationObject).features.size() < 4) {
 		return '''
 		if(!(new File("log4j.properties").exists())) {
 			try {
@@ -153,10 +152,10 @@ case "nosql":{
 	} else {
 		return '''
 		PropertyConfigurator.configure(«IF 
-		((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s.nullOrEmpty
-		»«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_f.name
+		((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
+		»«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name
 		»«ELSE
-		»"«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s»"«ENDIF»);
+		»"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«ENDIF»);
 							
 		MongoCollection <Document> «dec.name» = MongoClients.create().getDatabase("«database»").getCollection("«collection»");
 		'''

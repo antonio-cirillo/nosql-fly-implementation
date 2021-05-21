@@ -11,16 +11,11 @@ var __parse = require("csv-parse");
 All'interno della funzione `generateJsExpression`.
 ```node
 case "nosql":{
-	var client = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature)
-	var database = ((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
-	var collection = ((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s
+	var database = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
+	var collection = ((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
 	return '''
 		const __«exp.name»Client = new __nosql.MongoClient(
-		«IF client.value_s.nullOrEmpty»
-		«client.value_f.name»,
-		«ELSE»
-		"«client.value_s»",
-		«ENDIF»
+		"mongodb://127.0.0.1:27017/",
 		{ useUnifiedTopology: true }
 	);
 						
