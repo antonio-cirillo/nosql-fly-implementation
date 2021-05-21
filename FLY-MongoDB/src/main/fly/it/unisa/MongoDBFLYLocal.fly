@@ -5,14 +5,14 @@ var pathOfCSV = "/home/devcirillo/Documenti/GitHub/nosql-fly-implementation/FLY-
 
 var weatherCSV = [type = "file", path = pathOfCSV, ext = "csv"]
 
-var nosql = [type = "nosql", client = "", database = "mydb", collection = "weather"]
+var nosql = [type = "nosql", database = "mydb", collection = "weather"]
 
 var insertWeatherCSV = [type = "query", query_type = "insert", collection = nosql, 
 	statement = weatherCSV, from = "0", to = "150"]
 	
 insertWeatherCSV.execute()
 
-var nosql_2 = [type = "nosql", client = "", database = "mydb", collection = "weatherTmp"]
+var nosql_2 = [type = "nosql", database = "mydb", collection = "weatherTmp"]
 
 var insertWeatherCSV_2 = [type = "query", query_type = "insert", collection = nosql_2, 
 	statement = weatherCSV, from = "100", to = "155"]
@@ -27,7 +27,7 @@ var result = selectWeather.execute()
 
 func deleteDuplicate(result) {
 	
-	var nosql = [type = "nosql", client = "", database = "mydb", collection = "weatherTmp"]
+	var nosql = [type = "nosql", database = "mydb", collection = "weatherTmp"]
 		
 	for table in result {
 		
@@ -47,7 +47,7 @@ func deleteDuplicate(result) {
 
 func queryDatabase() {
 	
-	var nosql = [type = "nosql", client = "", database = "mydb", collection = "weatherTmp"]
+	var nosql = [type = "nosql", database = "mydb", collection = "weatherTmp"]
 	
 	var selectWeather = [type = "query", query_type = "select", collection = nosql, statement = "{ }"]
 

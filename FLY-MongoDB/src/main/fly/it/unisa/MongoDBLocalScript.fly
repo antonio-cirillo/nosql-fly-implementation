@@ -7,7 +7,7 @@ var cloud_2 = [type = "azure", clientID = "", tenantID = "", secret_key = "",
 
 func insertIntoDB() {
 	
-	var nosql = [type = "nosql", client = "mongodb://127.0.0.1:27017/", database = "mydb", collection = "weather"]
+	var nosql = [type = "nosql", database = "mydb", collection = "weather"]
 	
 	var pathOfCSV = "/home/devcirillo/Documenti/GitHub/nosql-fly-implementation/FLY-MongoDB/weatherHistory.csv"
 
@@ -37,7 +37,7 @@ fly insertIntoDB in [0:1] on cloud_2
 
 func selectFromDB() {
 	
-	var nosql = [type = "nosql", client = "mongodb://127.0.0.1:27017/", database = "mydb", collection = "weather"]
+	var nosql = [type = "nosql", database = "mydb", collection = "weather"]
 	
 	var statement = "{ }"
 	
@@ -62,7 +62,7 @@ fly selectFromDB in [0:1] on cloud_2
 
 func updateAndReplaceData() {
 	
-	var nosql = [type = "nosql", client = "mongodb://127.0.0.1:27017/", database = "mydb", collection = "weather"]
+	var nosql = [type = "nosql", database = "mydb", collection = "weather"]
 	
 	var updateFilter = "{ \\\"name\\\": \\\"Antonio\\\" }"
 	
@@ -85,7 +85,7 @@ fly updateAndReplaceData in [0:1] on cloud_2
 
 func dropDB() {
 	
-	var nosql = [type = "nosql", client = "mongodb://127.0.0.1:27017/", database = "mydb", collection = "weather"]
+	var nosql = [type = "nosql", database = "mydb", collection = "weather"]
 	
 	var deleteQuery = [type = "query", query_type = "delete", collection = nosql, statement = "{ }"]
 	

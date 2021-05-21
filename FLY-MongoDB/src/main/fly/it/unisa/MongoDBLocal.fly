@@ -1,7 +1,7 @@
 // var path = "log4j.properties"
-// var nosql = [type = "nosql", client = "", database = "mydb", collection = "weather", path = path]
+// var nosql = [type = "nosql", database = "mydb", collection = "weather", path = path]
 
-var nosql = [type = "nosql", client = "", database = "mydb", collection = "weather"]
+var nosql = [type = "nosql", database = "mydb", collection = "weather"]
 var pathOfCSV = "/home/devcirillo/Documenti/GitHub/nosql-fly-implementation/FLY-MongoDB/weatherHistory.csv"
 
 // ================== TEST INSERT OPERATION ================== //
