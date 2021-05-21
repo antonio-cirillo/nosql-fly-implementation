@@ -49,12 +49,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>it.isislab.fly</groupId>
-			<artifactId>azureclient</artifactId>
-			<version>1.0</version>
-		</dependency>
-
-		<dependency>
 			<groupId>tech.tablesaw</groupId>
 			<artifactId>tablesaw-core</artifactId>
 			<version>LATEST</version>
@@ -82,8 +76,8 @@
 		</dependency>
 		<dependency>
 			<groupId>org.mongodb</groupId>
-			<artifactId>mongodb-driver-sync</artifactId>
-			<version>4.2.2</version>
+			<artifactId>mongo-java-driver</artifactId>
+			<version>3.12.8</version>
 		</dependency>
 		<dependency>
 			<groupId>com.opencsv</groupId>
@@ -99,11 +93,6 @@
 		    <groupId>org.slf4j</groupId>
 		    <artifactId>slf4j-log4j12</artifactId>
 		    <version>1.7.13</version>
-		</dependency>
-		<dependency>
-		   <groupId>com.github.vincentrussell</groupId>
-		   <artifactId>sql-to-mongo-db-query-converter</artifactId>
-		   <version>1.18</version>
 		</dependency>
 		<dependency>
 		    <groupId>org.json</groupId>
