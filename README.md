@@ -5,7 +5,6 @@
 ## Stabilire una connessione a MongoDB in FLY
 Per stabili una connessione a MongoDB in FLY non ci basta che creare una nuova variabile di tipo `nosql`.  
 Le variabili di tipo `nosql` sono composte da, oltre al parametro type, tre parametri obbligari, che sono:  
-- `client:` ancora da implementare...
 - `database:` serve per specifiare il nome del database al quale vogliamo connetterci;
 - `collection:` serve per specifiare il nome della collezione di quel database che vogliamo utilizzare.  
   
@@ -56,7 +55,7 @@ Mostriamo uno snippet di codice per intenderci meglio. Intendiamo aggiungere que
 ```
 La prima cosa da fare è stabilire la connessione al database NoSQL tramite l'inizializzazione di una variabile di tipo 'nosql':
 ```
-var studentCollection = [type = "nosql", client = "", database = "mydatabase", collection = "students"]
+var studentCollection = [type = "nosql", database = "mydatabase", collection = "students"]
 ```
 In questo modo ora abbiamo stabilito una connessione al database **mydatabase** su MongoDB, e possiamo effettuare operazioni CRUD sulla collection **students**. *Ricordiamo che non avendo specificato il path del nostro file log4j.properties, quest'ultimo verrà generato automaticamente con le proprietà di default sopra descritte, e verrà utilizzato per stabilire la connessione con il client MongoDB*.  
 Ora non ci resta che creare una nuova variabile di tipo `query` impostando i vari parametri opportunamente:
