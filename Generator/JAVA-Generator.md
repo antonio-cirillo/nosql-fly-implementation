@@ -1,7 +1,10 @@
 ## Modifiche effettuate al generatore
 All'interno della funzione `compileJava` del generatore, sono stati aggiunti tutti gli import necessari per poter utilizzare MongoDB e per poter interagire con esso.
 ```java import
-import com.mongodb.client.*;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import org.bson.*;
 import java.io.FileReader;
 import com.opencsv.CSVReader;
@@ -124,41 +127,52 @@ private static List <Column <?>> ___generateColumns(
 All'interno della funzione `generateVariableDeclaration` è stato aggiunto il meccanismo di dichiarazione di variabili di tipo nosql.
 ```java
 case "nosql":{
-	var database = ((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
-	var collection = ((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
-	if((dec.right as DeclarationObject).features.size() < 4) {
+	if (dec.onCloud && (dec.environment.get(0).right as DeclarationObject).features.get(0).value_s.contains("azure")){
+		var resourceGroup = ((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
+		var instance = ((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
+		var database = ((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s
+		var collection = ((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s
 		return '''
-		if(!(new File("log4j.properties").exists())) {
-			try {
-				Properties props = new Properties();
-				props.put("log4j.rootLogger", "INFO, stdout");
-				props.put("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");
-				props.put("log4j.appender.stdout.Target", "System.out");
-				props.put("log4j.appender.stdout.layout", "org.apache.log4j.PatternLayout");
-				props.put("log4j.appender.stdout.layout.ConversionPattern", "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n");
-				FileOutputStream outputStream = new FileOutputStream("log4j.properties");
-				props.store(outputStream, "This is a default properties file");
-				System.out.println("Default properties file created.");
-			} catch (IOException e) {
-				System.out.println("Default properties file not created.");
-				e.printStackTrace();
-			}
-		}
-			
-		PropertyConfigurator.configure("log4j.properties");
-					
-		MongoCollection <Document> «dec.name» = MongoClients.create().getDatabase("«database»").getCollection("«collection»");
+		MongoClient «dec.name»Client = new MongoClient(new MongoClientURI(«dec.environment.get(0).name».getDBEndpointNoSQL("«resourceGroup»", "«instance»")));
+		MongoCollection <Document> «dec.name» = «dec.name»Client.getDatabase("«database»").getCollection("«collection»");
 		'''
 	} else {
-		return '''
-		PropertyConfigurator.configure(«IF 
-		((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
-		»«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name
-		»«ELSE
-		»"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«ENDIF»);
+		var database = ((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
+		var collection = ((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
+		if((dec.right as DeclarationObject).features.size() < 4) {
+			return '''
+			if(!(new File("log4j.properties").exists())) {
+				try {
+					Properties props = new Properties();
+					props.put("log4j.rootLogger", "INFO, stdout");
+					props.put("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");
+					props.put("log4j.appender.stdout.Target", "System.out");
+					props.put("log4j.appender.stdout.layout", "org.apache.log4j.PatternLayout");
+					props.put("log4j.appender.stdout.layout.ConversionPattern", "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n");
+					FileOutputStream outputStream = new FileOutputStream("log4j.properties");
+					props.store(outputStream, "This is a default properties file");
+					System.out.println("Default properties file created.");
+				} catch (IOException e) {
+					System.out.println("Default properties file not created.");
+					e.printStackTrace();
+				}
+			}
 							
-		MongoCollection <Document> «dec.name» = MongoClients.create().getDatabase("«database»").getCollection("«collection»");
-		'''
+			PropertyConfigurator.configure("log4j.properties");
+									
+			MongoCollection <Document> «dec.name» = new MongoClient().getDatabase("«database»").getCollection("«collection»");
+			'''
+		} else {
+			return '''
+			PropertyConfigurator.configure(«IF 
+			((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
+			»«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name
+			»«ELSE
+			»"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«ENDIF»);
+											
+			MongoCollection <Document> «dec.name» = new MongoClient().getDatabase("«database»").getCollection("«collection»");
+			'''
+		}
 	}
 }
 ```
@@ -269,14 +283,14 @@ case "query":{
 					»
 					«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»
 					« ELSE » 
-						"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«ENDIF»).toBsonDocument();
+						"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«ENDIF»).toBsonDocument(BsonDocument.class, MongoClient.getDefaultCodecRegistry());
 										
 					BsonDocument «dec.name» = Document.parse(«IF 
 						((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s.nullOrEmpty
 					»
 					«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_f.name»
 					« ELSE » 
-						"«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s»"«ENDIF»).toBsonDocument();
+						"«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s»"«ENDIF»).toBsonDocument(BsonDocument.class, MongoClient.getDefaultCodecRegistry());
 					'''	
 		} else if(query_type.equals("replace")) {
 			if((dec.right as DeclarationObject).features.size() == 5)
@@ -286,7 +300,7 @@ case "query":{
 				»
 					«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»
 				« ELSE » 
-					"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«ENDIF»).toBsonDocument();
+					"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«ENDIF»).toBsonDocument(BsonDocument.class, MongoClient.getDefaultCodecRegistry());
 										
 				Document «dec.name» = Document.parse(«IF 
 					((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s.nullOrEmpty
@@ -302,7 +316,7 @@ case "query":{
 			»
 			«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»
 			« ELSE » 
-				"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«ENDIF»).toBsonDocument();
+				"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«ENDIF»).toBsonDocument(BsonDocument.class, MongoClient.getDefaultCodecRegistry());
 			'''
 		}
 	}
@@ -426,8 +440,8 @@ All'interno del file `pom.xml` sono state aggiunte queste dipendenze:
 ```xml
 <dependency>
 	<groupId>org.mongodb</groupId>
-	<artifactId>mongodb-driver-sync</artifactId>
-	<version>4.2.2</version>
+	<artifactId>mongo-java-driver</artifactId>
+	<version>3.12.8</version>
 </dependency>
 <dependency>
 	<groupId>com.opencsv</groupId>
