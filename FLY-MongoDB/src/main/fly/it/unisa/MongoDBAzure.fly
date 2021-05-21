@@ -1,6 +1,34 @@
 var local = [type = "smp", nthread=2]
 
-var cloud = [type = "azure", clientID = "antonio-cirillo", tenantID = "", secret_key = "", 
-	subscriptionID = "", region = "West Europe", language = "nodejs", threads = 2, seconds = 300]
+var cloud = [type = "azure", clientID = "",
+	tenantID = "",
+	secret_key = "", 
+	subscriptionID = "", region = "West Europe", language = "nodejs",
+	threads = 2, seconds = 300]
 	
-var nosql = [type = "nosql", client = "", database = "mydb", collection = "weather"] on cloud
+var nosql = [type = "nosql", resourceGroup = "Isislab", instance = "antonio-cirillo", database = "mydb", collection = "weather"] on cloud
+
+var pathOfCSV = "/home/devcirillo/Documenti/GitHub/nosql-fly-implementation/FLY-MongoDB/weatherHistory.csv"
+
+var weatherCSV = [type = "file", path = pathOfCSV, ext = "csv"]
+
+var insertWeatherCSV = [type = "query", query_type = "insert", collection = nosql, 
+	statement = weatherCSV, from = "0", to = "150"]
+	
+insertWeatherCSV.execute()
+
+var selectWeather = [type = "query", query_type = "select", collection = nosql, statement = "{ }"]
+
+var result = selectWeather.execute()
+
+for table in result {
+		
+	println table
+				
+} 
+
+var dropDatabase = [type = "query", type_query = "delete", collection = nosql, statement = "{ }"]
+
+var result_2 = dropDatabase.execute()
+
+if (result_2 > 0) println "\\nCollection dropped"
