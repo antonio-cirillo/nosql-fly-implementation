@@ -5,11 +5,10 @@ from pymongo import MongoClient
 All'interno della funzione `generatePyExpression`.
 ```python
 case "nosql": {
-	var client = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
-	var database = ((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
-	var collection = ((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s
+	var database = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
+	var collection = ((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
 	return '''
-	«exp.name»Client = MongoClient('«client»') 
+	«exp.name»Client = MongoClient('mongodb://127.0.0.1:27017/') 
 	«exp.name»Database = «exp.name»Client['«database»']
 	«exp.name» = «exp.name»Database['«collection»']
 	'''
