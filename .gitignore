@@ -10,3 +10,7 @@ FLY-MongoDB/src-gen/insertIntoDB_cloud_undeploy.sh
 *.sh
 *.txt
 FLY-MongoDB/src-gen/MongoDBLocalScript.java
+FLY-MongoDB/policyDocument.json
+FLY-MongoDB/rolePolicyDocument.json
+FLY-MongoDB/src-gen/MongoDBAws.java
+FLY-MongoDB/src/main/fly/it/unisa/MongoDBLocalScript.fly
