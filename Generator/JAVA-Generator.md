@@ -13,6 +13,11 @@ import org.apache.log4j.PropertyConfigurator;
 import java.util.Iterator;
 import tech.tablesaw.api.StringColumn;
 import tech.tablesaw.api.IntColumn;
+
+«IF checkAWS() || checkAWSDebug()»
+import com.amazonaws.services.rds.model.DBClusterEndpoint;
+import com.amazonaws.services.rds.model.DescribeDBClusterEndpointsRequest;
+import com.amazonaws.services.rds.model.DescribeDBClusterEndpointsResult;
 ```
 Oltre agli import alle librerie neccesarie, sono state aggiunte le implementazioni delle funzioni globali `___generateTableFromNoSQLQuery`, necessaria per poter ottenere una 
 lista di oggetti `tech.tablesaw.Table` a partire da un oggetto di tipo `com.mongodb.client.MongoCursor`.
