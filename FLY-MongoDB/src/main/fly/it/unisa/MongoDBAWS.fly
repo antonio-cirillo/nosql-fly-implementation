@@ -1,0 +1,55 @@
+var local = [type = "smp", nthread = 4]
+
+var cloud = [type = "aws", user = "default", access_id_key = "AKIA4TCJWOWLUHD4C5H2", 
+	secret_access_key = "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", 
+	region = "eu-west-2", language = "python3.6", thread = 10, memory = 256, time_ = 300] 
+	
+var nosql = [type = "nosql", database = "mydb", collection = "weather"]
+
+var pathOfCSV = "/home/devcirillo/Documenti/GitHub/nosql-fly-implementation/FLY-MongoDB/weatherHistory.csv"
+
+var weatherCSV = [type = "file", path = pathOfCSV, ext = "csv"]
+
+var insertWeatherCSV = [type = "query", query_type = "insert", collection = nosql, 
+	statement = weatherCSV, from = "0", to = "150"]
+	
+insertWeatherCSV.execute()
+
+func copyElement() {
+	var nosql_1 = [type = "nosql", ip = "188.153.237.232", database = "mydb", collection = "weather"] on cloud
+	
+	var nosql_2 = [type = "nosql", ip = "188.153.237.232", database = "mydb", collection = "weather2"] on cloud
+	
+	var selectWeather = [type = "query", query_type = "select", 
+		collection = nosql_1, statement = "{\\\"Temperature (C)\\\": { \\\"$gt\\\": \\\"5\\\" } }"]
+
+	var result = selectWeather.execute()
+	
+	for table in result {
+		
+		for data in table {
+			
+			var insertElementStatement = "{\\\"Formatted Date\\\": \\\"" + data[1] as String + "\\\", "
+			insertElementStatement += "\\\"Summary\\\": \\\"" + data[2] as String + "\\\", "
+			insertElementStatement += "\\\"Precip Type\\\": \\\"" + data[3] as String + "\\\", "
+			insertElementStatement += "\\\"Temperature (C)\\\": \\\"" + data[4] as String + "\\\", "
+			insertElementStatement += "\\\"Apparent Temperature (C)\\\": \\\"" + data[5] as String + "\\\", "
+			insertElementStatement += "\\\"Humidity\\\": \\\"" + data[6] as String + "\\\", "
+			insertElementStatement += "\\\"Wind Speed (km/h)\\\": \\\"" + data[7] as String + "\\\", "
+			insertElementStatement += "\\\"Wind Bearing (degrees)\\\": \\\"" + data[8] as String + "\\\", "
+			insertElementStatement += "\\\"Visibility (km)\\\": \\\"" + data[9] as String + "\\\", "
+			insertElementStatement += "\\\"Loud Cover\\\": \\\"" + data[10] as String + "\\\", "
+			insertElementStatement += "\\\"Pressure (millibars)\\\": \\\"" + data[11] as String + "\\\", "
+			insertElementStatement += "\\\"Daily Summary\\\": \\\"" + data[12] as String + "\\\"}"
+			
+			var insertElement = [type = "query", query_type = "insert", 
+				collection = nosql_2, statement = insertElementStatement]
+			
+			insertElement.execute()			
+		}
+		
+	}
+	
+}
+
+fly copyElement in [0:1] on cloud

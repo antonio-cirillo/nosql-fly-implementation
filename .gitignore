@@ -14,3 +14,4 @@ FLY-MongoDB/policyDocument.json
 FLY-MongoDB/rolePolicyDocument.json
 FLY-MongoDB/src-gen/MongoDBAws.java
 FLY-MongoDB/src/main/fly/it/unisa/MongoDBLocalScript.fly
+FLY-MongoDB/src-gen/MongoDBAWS.java
