@@ -11,20 +11,36 @@ var __parse = require("csv-parse");
 All'interno della funzione `generateJsExpression`.
 ```node
 case "nosql":{
-	var database = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
-	var collection = ((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
-	return '''
+	if (exp.onCloud && (exp.environment.get(0).right as DeclarationObject).features.get(0).value_s.contains("aws")){
+		var client = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
+		var database = ((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
+		var collection = ((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s
+		return '''
 		const __«exp.name»Client = new __nosql.MongoClient(
-		"mongodb://127.0.0.1:27017/",
-		{ useUnifiedTopology: true }
-	);
-						
-	await __«exp.name»Client.connect();
-						
-	const «exp.name» = __«exp.name»Client.db("«database»").collection("«collection»");
-	'''
+			"mongodb://«client»:27017/",
+			{ useUnifiedTopology: true }
+		);
+								
+		await __«exp.name»Client.connect();
+													
+		const «exp.name» = __«exp.name»Client.db("«database»").collection("«collection»");
+					
+		'''
+	} else {
+		var database = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
+		var collection = ((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
+		return '''
+		const __«exp.name»Client = new __nosql.MongoClient(
+			"mongodb://127.0.0.1:27017/",
+			{ useUnifiedTopology: true }
+		);
+								
+		await __«exp.name»Client.connect();
+					
+		const «exp.name» = __«exp.name»Client.db("«database»").collection("«collection»");
+		'''
+	}
 }
-
 case "query":{
 	var connection = (((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f as VariableDeclaration)	
 	var databaseType = (connection.right as DeclarationObject).features.get(0).value_s
@@ -38,19 +54,20 @@ case "query":{
 		ENDIF»;
 		'''	 
 	} else if(databaseType.equals("nosql")) {
-		var query_type = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s						
+		var query_type = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
+		var collection = (exp.right as DeclarationObject).features.get(2).value_f.name						
 		if(query_type.equals("select")) {
 			typeSystem.get(scope).put(exp.name, "List <Table>")
 			return '''
 			const «exp.name» = async () => {
-						
+									
 				let features = [];
 				let objects = [];
 										
 				await «collection».find(JSON.parse(«IF((exp.right as DeclarationObject).features.get(3).value_s.nullOrEmpty)
 				»«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»«
 				ELSE
-				»"«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«
+				»"«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.replace("\\$", "$")»"«
 				ENDIF»)).forEach((object) => {
 											
 				const keys = Object.keys(object);
@@ -59,7 +76,7 @@ case "query":{
 											
 				for(i = 0; i < n; ++i)
 					if(!(JSON.stringify(features[i]) !== JSON.stringify(keys)))
-							break;
+						break;
 											
 				if(i === n) {
 					features.push(keys);
@@ -69,108 +86,108 @@ case "query":{
 				} else
 					objects[i].push(object);
 											
-				});
+			});
 										
-				let tables = [];
-										
-				for(i = 0; i < features.length; ++i)
-					tables.push(new __dataframe(
-						objects[i],
-						features[i]
-					));
+			let tables = [];
+							
+			for(i = 0; i < features.length; ++i)
+				tables.push(new __dataframe(
+					objects[i],
+					features[i]
+				));
 											
-				return tables;
-			}
+			return tables;
+		}
 									
-			'''
-		} if(query_type.equals("insert")) {
-			if(((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty) {
-				if((((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f as VariableDeclaration).right instanceof DeclarationObject) {
-					var variables = (((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f as VariableDeclaration).right as DeclarationObject
-					if(variables.features.get(0).value_s.equals("file")) {
-						if((exp.right as DeclarationObject).features.size() == 6) {
-							var from = ((exp.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s
-							var to = ((exp.right as DeclarationObject).features.get(5) as DeclarationFeature).value_s
-							return '''
-							const «exp.name» = async () => {
-														
-								let i = 0;
-								let features;
-								let objects = [];
-														
-								await new Promise((resolve) => {
-												
-									__fs.createReadStream(«IF
-									(variables.features.get(1).value_s.nullOrEmpty)»«variables.features.get(1).value_f.name»«
-									ELSE»"«variables.features.get(1).value_s»"«ENDIF»)
-									.pipe(__parse())
-									.on("data", (row) => {
-										if(i == 0) {
-											features = row;
-											++i;
-										} else if(i >= «from» && i <= «to») {
-											let object = { };
-											for([index, value] of features.entries())
-												object[features[index]] = row[index];
-											objects.push(object);
-											++i;
-										} else if(i < «from»)
-											++i;
-										})
-									.on("end", () => {
-										resolve();
-									});
-								});
-														
-								return objects;
-							}
-													
-							'''
-						} else {
-							return '''
-							const «exp.name» = async () => {
-														
-								let i = 0;
-								let features;
-								let objects = [];
-														
-								await new Promise((resolve) => {
-														
-									__fs.createReadStream(«IF
-									(variables.features.get(1).value_s.nullOrEmpty)»«variables.features.get(1).value_f.name»«
-									ELSE»"«variables.features.get(1).value_s»"«ENDIF»)
-									.pipe(__parse())
-									.on("data", (row) => {
-										if(i == 0) {
-											features = row;
-											++i;
-										} else {
-											let object = { };
-											for([index, value] of features.entries())
-												object[features[index]] = row[index];
-											objects.push(object);
-											++i;
-										}
-									})
+		'''
+	} if(query_type.equals("insert")) {
+		if(((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty) {
+			if((((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f as VariableDeclaration).right instanceof DeclarationObject) {
+				var variables = (((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f as VariableDeclaration).right as DeclarationObject
+				if(variables.features.get(0).value_s.equals("file")) {
+					if((exp.right as DeclarationObject).features.size() == 6) {
+						var from = ((exp.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s
+						var to = ((exp.right as DeclarationObject).features.get(5) as DeclarationFeature).value_s
+						return '''
+						const «exp.name» = async () => {
+
+						let i = 0;
+						let features;
+						let objects = [];
+
+						await new Promise((resolve) => {
+
+							__fs.createReadStream(«IF
+							(variables.features.get(1).value_s.nullOrEmpty)»«variables.features.get(1).value_f.name»«
+							ELSE»"«variables.features.get(1).value_s»"«ENDIF»)
+							.pipe(__parse())
+							.on("data", (row) => {
+								if(i == 0) {
+									features = row;
+									++i;
+								} else if(i >= «from» && i <= «to») {
+									let object = { };
+									for([index, value] of features.entries())
+										object[features[index]] = row[index];
+									objects.push(object);
+									++i;
+								} else if(i < «from»)
+									++i;
+								})
 								.on("end", () => {
 									resolve();
 								});
 							});
-											
+
+						return objects;
+					}
+
+					'''
+				} else {
+						return '''
+						const «exp.name» = async () => {
+
+							let i = 0;
+							let features;
+							let objects = [];
+
+							await new Promise((resolve) => {
+
+							__fs.createReadStream(«IF
+							(variables.features.get(1).value_s.nullOrEmpty)»«variables.features.get(1).value_f.name»«
+							ELSE»"«variables.features.get(1).value_s»"«ENDIF»)
+							.pipe(__parse())
+							.on("data", (row) => {
+								if(i == 0) {
+									features = row;
+									++i;
+								} else {
+									let object = { };
+									for([index, value] of features.entries())
+										object[features[index]] = row[index];
+									objects.push(object);
+									++i;
+								}
+							})
+							.on("end", () => {
+									resolve();
+								});
+							});
+
 							return objects;
 						}
-									
-					'''
+
+						'''
 					}
 				}
-			} else {
+		} else {
 				return '''
 				let «exp.name»;
 				if(«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name».charAt(0) === "[")
 					«exp.name» = JSON.parse(«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»);
 				else
 					«exp.name» = JSON.parse("[" + «((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name» + "]");
-								
+
 				'''
 			}
 		} else {
@@ -180,7 +197,7 @@ case "query":{
 				«exp.name» = JSON.parse("«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»");
 			else
 				«exp.name» = JSON.parse("[" + "«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»" + "]");
-											
+
 			'''
 			}
 		} else {
@@ -188,21 +205,21 @@ case "query":{
 			return '''
 			const «exp.name» = JSON.parse(«IF
 			((exp.right as DeclarationObject).features.get(3).value_s.nullOrEmpty)»«(exp.right as DeclarationObject).features.get(3).value_f.name»«
-			ELSE»"«(exp.right as DeclarationObject).features.get(3).value_s»"«ENDIF»);
+			ELSE»"«(exp.right as DeclarationObject).features.get(3).value_s.replace("\\$", "$")»"«ENDIF»);
 										
 			'''
 		} else 
 			return '''
 			const «exp.name»Filter = JSON.parse(«IF
 			((exp.right as DeclarationObject).features.get(3).value_s.nullOrEmpty)»«(exp.right as DeclarationObject).features.get(3).value_f.name»«
-			ELSE»"«(exp.right as DeclarationObject).features.get(3).value_s»"«ENDIF»);
-								
+			ELSE»"«(exp.right as DeclarationObject).features.get(3).value_s.replace("\\$", "$")»"«ENDIF»);
+						
 			const «exp.name» = JSON.parse(«IF
 			((exp.right as DeclarationObject).features.get(4).value_s.nullOrEmpty)»«(exp.right as DeclarationObject).features.get(4).value_f.name»«
-			ELSE»"«(exp.right as DeclarationObject).features.get(4).value_s»"«ENDIF»);
+			ELSE»"«(exp.right as DeclarationObject).features.get(4).value_s».replace("\\$", "$")"«ENDIF»);
 										
 			'''				
-		}							
+		}								
 	}
 }
 ```
@@ -300,16 +317,34 @@ else if(typeSystem.get(scope).get((exp.object as VariableLiteral).variable.name)
 	'''
 }
 ```
-All'interno delle funzioni `AWSDeploy`, `AWSDebugDeploy`.
+All'interno delle funzioni `AWSDeploy`.
 ```bash
 echo "npm install mongodb"
-		npm install mongodb
-		if [ $? -eq 0 ]; then
-			echo "..."
-		else
-			echo "npm install mysql failed"
-			exit 1
-		fi
+npm install mongodb
+if [ $? -eq 0 ]; then
+	echo "..."
+else
+	echo "npm install mongodb failed"
+	exit 1
+fi
+		
+echo "npm install csv-parse"
+npm install csv-parse
+if [ $? -eq 0 ]; then
+	echo "..."
+else
+	echo "npm install csv-parse failed"
+	exit 1
+fi
+		
+echo "npm install fs"
+npm install fs
+if [ $? -eq 0 ]; then
+	echo "..."
+else
+	echo "npm install fs failed"
+	exit 1
+fi
 ```
 All'interno della funzione `AzureDeploy`.
 ```bash
