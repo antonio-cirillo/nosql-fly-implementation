@@ -1,3 +1,7 @@
+All'interno di `doGenerate`.
+```python
+allReqs.add("pymongo")
+```
 All'interno della funzione `generateBodyPy`.
 ```python
 from pymongo import MongoClient
@@ -5,16 +9,28 @@ from pymongo import MongoClient
 All'interno della funzione `generatePyExpression`.
 ```python
 case "nosql": {
-	var database = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
-	var collection = ((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
-	return '''
-	«exp.name»Client = MongoClient('mongodb://127.0.0.1:27017/') 
-	«exp.name»Database = «exp.name»Client['«database»']
-	«exp.name» = «exp.name»Database['«collection»']
-	'''
-}
+	if (exp.onCloud && (exp.environment.get(0).right as DeclarationObject).features.get(0).value_s.contains("aws")){
+		var client = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
+		var database = ((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
+		var collection = ((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s
+		return '''
+		«exp.name»Client = MongoClient('mongodb://«client»:27017/') 
+		«exp.name»Database = «exp.name»Client['«database»']
+		«exp.name» = «exp.name»Database['«collection»']
+								
+		'''
+	} else {
+		var database = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
+		var collection = ((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
+		return '''
+		«exp.name»Client = MongoClient('mongodb://127.0.0.1:27017/') 
+		«exp.name»Database = «exp.name»Client['«database»']
+		«exp.name» = «exp.name»Database['«collection»']
+								
+		'''
+	}
 
-case "query":{
+} case "query":{
 	var connection = ((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f.name
 	var con = (((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f as VariableDeclaration)
 	var databaseType = ((con as VariableDeclaration).right as DeclarationObject).features.get(0).value_s
@@ -35,36 +51,36 @@ case "query":{
 		var collection = (exp.right as DeclarationObject).features.get(2).value_f.name						
 		if(query_type.equals("select")) {
 			typeSystem.get(scope).put(exp.name, "List <Table>")
-			return '''
-			def __«exp.name»__():
-				result = «collection».find(json.loads(«IF((exp.right as DeclarationObject).features.get(3).value_s.nullOrEmpty)
-				»«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»«
-			 	ELSE
-			 	»"«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«
-			 	ENDIF»))
-			 	features = []
-			 	objects = []
-			 	for value in result:
-			 		feature = value.keys()
-					i = 0
-					for f in features:
-				 		if f == feature:
-							break
-						else:
-				 			i = i + 1 
-					if i + 1 > len(features):
-			  		features.append(feature)
-						objects.append([])
-						objects[len(objects) - 1].append(value)
+		return '''
+		def __«exp.name»__():
+			result = «collection».find(json.loads(«IF((exp.right as DeclarationObject).features.get(3).value_s.nullOrEmpty)
+			»«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»«
+			ELSE
+			»'«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»'«
+			ENDIF»))
+			features = []
+			objects = []
+			for value in result:
+				feature = value.keys()
+				i = 0
+				for f in features:
+					if f == feature:
+						break
 					else:
-				  	objects[i].append(value)
+						i = i + 1 
+				if i + 1 > len(features):
+					features.append(feature)
+					objects.append([])
+					objects[len(objects) - 1].append(value)
+			 	else:
+					objects[i].append(value)
 									
-				df = []
-				for i in range(len(features)):
-					df.append(pd.DataFrame(objects[i]))
+			df = []
+			for i in range(len(features)):
+				df.append(pd.DataFrame(objects[i]))
 									
-				return df
-									
+			return df
+								
 			'''
 		} if(query_type.equals("insert")) {
 			if(((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty) {
@@ -78,35 +94,35 @@ case "query":{
 							«exp.name» = pd.read_csv(«IF
 							(variables.features.get(1).value_s.nullOrEmpty)»«variables.features.get(1).value_f.name»«
 							ELSE»"«variables.features.get(1).value_s»"«ENDIF», skiprows = range(1, «from»), nrows = («to» - «from»)).to_dict('records')
-							
+													
 							'''
 						} else {
 							return '''
 							«exp.name» = pd.read_csv(«IF
 							(variables.features.get(1).value_s.nullOrEmpty)»«variables.features.get(1).value_f.name»«
 							ELSE»"«variables.features.get(1).value_s»"«ENDIF»).to_dict('records')
-							
+													
 							'''
 						}
 					}
 				} else {
 					return '''
-					«exp.name» = ""
-					if «((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»[0] == "[" :
+					«exp.name» = ''
+					if «((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»[0] == '[' :
 						«exp.name» = json.loads(«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»)
 					else:
-						«exp.name» = json.loads("[" + «((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name» + "]")
+						«exp.name» = json.loads('[' + «((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name» + ']')
 											
 					'''
 				} 
 			} else {
 				return '''
-				«exp.name» = """
-				if "«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"[0] == "[" :
-					«exp.name» = json.loads("«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»")
+				«exp.name» = ''
+				if '«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»'[0] == '[' :
+					«exp.name» = json.loads('«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»')
 				else:
-					«exp.name» = json.loads("[" + "«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»" + "]")
-								
+					«exp.name» = json.loads('[' + '«((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»' + ']'
+											
 				'''
 			}
 		} else {
@@ -115,22 +131,22 @@ case "query":{
 				«exp.name» = json.loads(«IF
 				((exp.right as DeclarationObject).features.get(3).value_s.nullOrEmpty)»«(exp.right as DeclarationObject).features.get(3).value_f.name»«
 				ELSE»"«(exp.right as DeclarationObject).features.get(3).value_s»"«ENDIF»)
-				
+								
 				'''
 			} else {
 				return '''
 				«exp.name»Filter = json.loads(«IF
 				((exp.right as DeclarationObject).features.get(3).value_s.nullOrEmpty)»«(exp.right as DeclarationObject).features.get(3).value_f.name»«
 				ELSE»"«(exp.right as DeclarationObject).features.get(3).value_s»"«ENDIF»)
-
+							
 				«exp.name» = json.loads(«IF
 				((exp.right as DeclarationObject).features.get(4).value_s.nullOrEmpty)»«(exp.right as DeclarationObject).features.get(4).value_f.name»«
 				ELSE»"«(exp.right as DeclarationObject).features.get(4).value_s»"«ENDIF»)
-
+										
 				'''
 			}
 		}
-	}
+	}							
 }
 ```
 All'interno della funzione `generatePyVariableFunction`.
