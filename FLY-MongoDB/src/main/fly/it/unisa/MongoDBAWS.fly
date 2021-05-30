@@ -1,27 +1,27 @@
 var local = [type = "smp", nthread = 4]
 
-var cloud = [type = "aws", user = "default", access_id_key = "AKIA4TCJWOWLUHD4C5H2", 
-	secret_access_key = "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", 
-	region = "eu-west-2", language = "python3.6", thread = 10, memory = 256, time_ = 300] 
+var cloud = [type = "aws", user = "default", access_id_key = "", 
+	secret_access_key = "", 
+	region = "eu-west-2", language = "nodejs12.x", thread = 10, memory = 256, time_ = 300]
 	
-var nosql = [type = "nosql", database = "mydb", collection = "weather"]
+/*var nosql = [type = "nosql", database = "mydb", collection = "weather"]
 
-var pathOfCSV = "/home/devcirillo/Documenti/GitHub/nosql-fly-implementation/FLY-MongoDB/weatherHistory.csv"
+var pathOfCSV = "/home/devci/Documenti/GitHub/nosql-fly-implementation/FLY-MongoDB/weatherHistory.csv"
 
 var weatherCSV = [type = "file", path = pathOfCSV, ext = "csv"]
 
 var insertWeatherCSV = [type = "query", query_type = "insert", collection = nosql, 
 	statement = weatherCSV, from = "0", to = "150"]
 	
-insertWeatherCSV.execute()
+insertWeatherCSV.execute()*/
 
 func copyElement() {
-	var nosql_1 = [type = "nosql", ip = "188.153.237.232", database = "mydb", collection = "weather"] on cloud
+	var nosql_1 = [type = "nosql", ip = "79.35.17.80", database = "mydb", collection = "weather"] on cloud
 	
-	var nosql_2 = [type = "nosql", ip = "188.153.237.232", database = "mydb", collection = "weather2"] on cloud
+	var nosql_2 = [type = "nosql", ip = "79.35.17.80", database = "mydb", collection = "weather2"] on cloud
 	
 	var selectWeather = [type = "query", query_type = "select", 
-		collection = nosql_1, statement = "{\\\"Temperature (C)\\\": { \\\"$gt\\\": \\\"5\\\" } }"]
+		collection = nosql_1, statement = "{\\\"Summary\\\": { \\\"\\$eq\\\": \\\"Partly Cloudy\\\" } }"]
 
 	var result = selectWeather.execute()
 	
