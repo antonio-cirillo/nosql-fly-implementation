@@ -26,6 +26,41 @@ case "nosql":{
 		const «exp.name» = __«exp.name»Client.db("«database»").collection("«collection»");
 					
 		'''
+	} else if(exp.onCloud && (exp.environment.get(0).right as DeclarationObject).features.get(0).value_s.contains("azure")){
+		var resourceGroup = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
+		var instance = ((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
+		var database = ((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s
+		var collection = ((exp.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s 
+		return '''
+		var __url_«exp.name» = "https://management.azure.com/subscriptions/" + "'${subscription}'" 
+			+ "/resourceGroups/" + "«resourceGroup»"
+			+ "/providers/Microsoft.DocumentDB/databaseAccounts/" + "«instance»"
+			+ "/listConnectionStrings?api-version=2021-03-01-preview"
+								
+		let __endpoint_«exp.name»;
+								
+		await __axios.post(__url_nosql, { }, {
+			headers: { 
+				"Authorization": "Bearer " + __token,
+				"Accept": "application/json"
+		}})
+		.then((response) => {
+		 __endpoint_«exp.name» = response.data.connectionStrings[0].connectionString;
+		})
+		.catch((error) => {
+			console.log(error);
+		})
+							
+		const __«exp.name»Client = new __nosql.MongoClient(
+			__endpoint_«exp.name»,
+			{ useUnifiedTopology: true }
+		);
+								
+		await __«exp.name»Client.connect();
+								
+		const «exp.name» = __«exp.name»Client.db("«database»").collection("«collection»");
+								
+		'''
 	} else {
 		var database = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
 		var collection = ((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
@@ -354,12 +389,14 @@ echo '{
 	"main": "index.js",
 	"dependencies": {
 	  "azure-storage": "2.10.3",
-	  "async": "3.2.0",
-	  "axios": "0.19.2",
-	  "qs": "6.9.4",
-	  "util": "0.12.3",
-	  "dataframe-js": "1.4.3",
-	  "mysql": "2.18.1",
-	  "mongodb": "^3.6.6"
+		"async": "3.2.0",
+		"axios": "0.19.2",
+		"qs": "6.9.4",
+		"util": "0.12.3",
+		"dataframe-js": "1.4.3",
+		"mysql": "2.18.1",
+		"mongodb": "^3.6.6",
+		"csv": "^5.5.0",
+		"dataframe-js": "^1.4.4"
 },
 ```
