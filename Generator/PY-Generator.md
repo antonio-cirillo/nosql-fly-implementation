@@ -1,6 +1,7 @@
 All'interno di `doGenerate`.
 ```python
 allReqs.add("pymongo")
+allReqs.add("requests")
 ```
 All'interno della funzione `generateBodyPy`.
 ```python
@@ -19,6 +20,36 @@ case "nosql": {
 		«exp.name» = «exp.name»Database['«collection»']
 								
 		'''
+	} else if(exp.onCloud && (exp.environment.get(0).right as DeclarationObject).features.get(0).value_s.contains("azure")){
+		var resourceGroup = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
+		var instance = ((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
+		var database = ((exp.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s
+		var collection = ((exp.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s 
+		return '''
+		auth_url = 'https://login.microsoftonline.com/' + '"${tenant}"' + '/oauth2/v2.0/token'
+		scope = 'https://management.azure.com/.default'
+								
+		headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+		url = auth_url
+		data = { 'client_id': '"${user}"',
+			'scope': scope,
+			'client_secret': '"${secret}"',
+			'grant_typ': 'client_credentials'
+		}
+		r = requests.post(url=url, data=data, headers=headers)
+								
+		get_token = r.json()
+								
+		access_token = get_token['access_token']
+		header_token = {'Authorization': 'Bearer {}'.format(access_token)}
+							
+		__url_ = 'https://management.azure.com/subscriptions/' + '"${subscription}"' + '/resourceGroups/' + «resourceGroup» + '/providers/Microsoft.DocumentDB/databaseAccounts/' + «instance» + '/listConnectionStrings?api-version=2021-03-01-preview'
+								
+		«exp.name»Client = MongoClient(__url_) 
+		«exp.name»Database = «exp.name»Client['«database»']
+		«exp.name» = «exp.name»Database['«collection»']
+		
+		''' 
 	} else {
 		var database = ((exp.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
 		var collection = ((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
