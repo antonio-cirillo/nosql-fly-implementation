@@ -128,34 +128,7 @@ private static List <Column <?>> ___generateColumns(
 All'interno della funzione `generateVariableDeclaration` è stato aggiunto il meccanismo di dichiarazione di variabili di tipo nosql.
 ```java
 case "nosql":{
-	if (dec.onCloud && (dec.environment.get(0).right as DeclarationObject).features.get(0).value_s.contains("aws")){
-		var client = ((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
-		var database = ((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
-		var collection = ((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s
-		return '''
-		if(!(new File("log4j.properties").exists())) {
-		try {
-			Properties props = new Properties();
-			props.put("log4j.rootLogger", "INFO, stdout");
-			props.put("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");
-			props.put("log4j.appender.stdout.Target", "System.out");
-			props.put("log4j.appender.stdout.layout", "org.apache.log4j.PatternLayout");
-			props.put("log4j.appender.stdout.layout.ConversionPattern", "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n");
-			FileOutputStream outputStream = new FileOutputStream("log4j.properties");
-			props.store(outputStream, "This is a default properties file");
-			System.out.println("Default properties file created.");
-		} catch (IOException e) {
-			System.out.println("Default properties file not created.");
-			e.printStackTrace();
-		}
-	}
-								
-	PropertyConfigurator.configure("log4j.properties");
-							
-	MongoClient «dec.name»Client = new MongoClient(new MongoClientURI("mongodb://«client»:27017/"));
-	MongoCollection <Document> «dec.name» = «dec.name»Client.getDatabase("«database»").getCollection("«collection»");
-	'''							
-} else if (dec.onCloud && (dec.environment.get(0).right as DeclarationObject).features.get(0).value_s.contains("azure")){
+	if (dec.onCloud && (dec.environment.get(0).right as DeclarationObject).features.get(0).value_s.contains("azure")){
 		var resourceGroup = ((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
 		var instance = ((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
 		var database = ((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s
@@ -165,9 +138,9 @@ case "nosql":{
 		MongoCollection <Document> «dec.name» = «dec.name»Client.getDatabase("«database»").getCollection("«collection»");
 		'''
 	} else {
-		var database = ((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
-		var collection = ((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
-		if((dec.right as DeclarationObject).features.size() < 4) {
+		var database = ((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s
+		var collection = ((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s								
+		if((dec.right as DeclarationObject).features.size() < 5) {
 			return '''
 			if(!(new File("log4j.properties").exists())) {
 				try {
@@ -185,20 +158,30 @@ case "nosql":{
 					e.printStackTrace();
 				}
 			}
-							
+								
 			PropertyConfigurator.configure("log4j.properties");
 									
-			MongoCollection <Document> «dec.name» = new MongoClient().getDatabase("«database»").getCollection("«collection»");
+			MongoClient «dec.name»Client = new MongoClient(new MongoClientURI(«IF 
+			((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s.nullOrEmpty
+			»«((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_f.name
+			»«ELSE
+			»"«((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s»"«ENDIF»));
+			MongoCollection <Document> «dec.name» = «dec.name»Client.getDatabase("«database»").getCollection("«collection»");
 			'''
 		} else {
 			return '''
 			PropertyConfigurator.configure(«IF 
-			((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
-			»«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name
+			((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s.nullOrEmpty
+			»«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_f.name
 			»«ELSE
-			»"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"«ENDIF»);
-											
-			MongoCollection <Document> «dec.name» = new MongoClient().getDatabase("«database»").getCollection("«collection»");
+			»"«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s»"«ENDIF»);
+								
+			MongoClient «dec.name»Client = new MongoClient(new MongoClientURI(«IF 
+			((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s.nullOrEmpty
+			»«((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_f.name
+			»«ELSE
+			»"«((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s»"«ENDIF»));
+			MongoCollection <Document> «dec.name» = «dec.name»Client.getDatabase("«database»").getCollection("«collection»");
 			'''
 		}
 	}
@@ -223,11 +206,11 @@ case "query":{
 		return '''
 		PreparedStatement «dec.name» = «connection».prepareStatement(
 		«IF 
-			((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
+		((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
 		»
 		«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»
 		« ELSE » 
-			"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"
+		"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»"
 		«ENDIF»
 		);
 		'''
@@ -255,7 +238,7 @@ case "query":{
 									Document ___dcmnt_tmp = new Document();
 									for(int ___indexOfReadingFromCSV2 = 0; ___indexOfReadingFromCSV2 < ___nosqlfeatures.length; ___indexOfReadingFromCSV2++) 
 										___dcmnt_tmp.append(___nosqlfeatures[___indexOfReadingFromCSV2], 
-									___listOfArrayString.get(___indexOfReadingFromCSV)[___indexOfReadingFromCSV2]); 
+											___listOfArrayString.get(___indexOfReadingFromCSV)[___indexOfReadingFromCSV2]); 
 									«dec.name».add(___dcmnt_tmp);
 								}
 							}
@@ -271,16 +254,29 @@ case "query":{
 									Document ___dcmnt_tmp = new Document();
 									for(int ___indexOfReadingFromCSV2 = 0; ___indexOfReadingFromCSV2 < ___nosqlfeatures.length; ___indexOfReadingFromCSV2++) 
 										___dcmnt_tmp.append(___nosqlfeatures[___indexOfReadingFromCSV2], 
-									___listOfArrayString.get(___indexOfReadingFromCSV)[___indexOfReadingFromCSV2]); 
+											___listOfArrayString.get(___indexOfReadingFromCSV)[___indexOfReadingFromCSV2]); 
 									«dec.name».add(___dcmnt_tmp);
 								}
 							}
 							'''
 						}
 					} 
+				} else {
+					return '''
+					String ___«dec.name»Statement = «((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»;
+					if(___«dec.name»Statement.charAt(0) != '[')
+						___«dec.name»Statement = "[" + ___«dec.name»Statement + "]";
+					
+					org.json.JSONArray ___«dec.name»JsonArrayQuery = new org.json.JSONArray(___«dec.name»Statement);
+					List <Document> «dec.name» = new ArrayList <Document> ();
+					
+					for(int ___indexForJsonArray = 0; ___indexForJsonArray < ___«dec.name»JsonArrayQuery.length(); ___indexForJsonArray++) 
+						«dec.name».add(Document.parse(___«dec.name»JsonArrayQuery.get(___indexForJsonArray).toString()));
+					'''
+				}
 			} else {
 				return '''
-				String ___«dec.name»Statement = «((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»;
+				String ___«dec.name»Statement = "«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»";
 				if(___«dec.name»Statement.charAt(0) != '[')
 					___«dec.name»Statement = "[" + ___«dec.name»Statement + "]";
 					
@@ -291,60 +287,48 @@ case "query":{
 					«dec.name».add(Document.parse(___«dec.name»JsonArrayQuery.get(___indexForJsonArray).toString()));
 				'''
 			}
-		} else {
-			return '''
-			String ___«dec.name»Statement = "«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s»";
-			if(___«dec.name»Statement.charAt(0) != '[')
-				___«dec.name»Statement = "[" + ___«dec.name»Statement + "]";
-					
-			org.json.JSONArray ___«dec.name»JsonArrayQuery = new org.json.JSONArray(___«dec.name»Statement);
-			List <Document> «dec.name» = new ArrayList <Document> ();
-					
-			for(int ___indexForJsonArray = 0; ___indexForJsonArray < ___«dec.name»JsonArrayQuery.length(); ___indexForJsonArray++) 
-				«dec.name».add(Document.parse(___«dec.name»JsonArrayQuery.get(___indexForJsonArray).toString()));'''
-		}
-	} else if(query_type.equals("update")) { 
-		if((dec.right as DeclarationObject).features.size() == 5)
-			return '''
-			BsonDocument «dec.name»_filter = Document.parse(«IF 
+		} else if(query_type.equals("update")) { 
+			if((dec.right as DeclarationObject).features.size() == 5)
+				return '''
+				BsonDocument «dec.name»_filter = Document.parse(«IF 
 				((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
-			»
-			«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»
-			« ELSE » 
+				»
+				«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»
+				« ELSE » 
 				"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.replace("\\$", "$")»"«ENDIF»).toBsonDocument(BsonDocument.class, MongoClient.getDefaultCodecRegistry());
 															
-			BsonDocument «dec.name» = Document.parse(«IF 
+				BsonDocument «dec.name» = Document.parse(«IF 
 				((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s.nullOrEmpty
-			»
-			«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_f.name»
-			« ELSE » 
+				»
+				«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_f.name»
+				« ELSE » 
 				"«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s.replace("\\$", "$")»"«ENDIF»).toBsonDocument(BsonDocument.class, MongoClient.getDefaultCodecRegistry());
-			'''	
+				'''	
 		} else if(query_type.equals("replace")) {
 			if((dec.right as DeclarationObject).features.size() == 5)
-			return '''
-			BsonDocument «dec.name»_filter = Document.parse(«IF 
+				return '''
+				BsonDocument «dec.name»_filter = Document.parse(«IF 
 				((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
-			»
+				»
 				«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»
-			« ELSE » 
+				« ELSE » 
 				"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.replace("\\$", "$")»"«ENDIF»).toBsonDocument(BsonDocument.class, MongoClient.getDefaultCodecRegistry());
 															
-			Document «dec.name» = Document.parse(«IF 
+				Document «dec.name» = Document.parse(«IF 
 				((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s.nullOrEmpty
-			»
+				»
 				«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_f.name»
-			« ELSE » 
+				« ELSE » 
 				"«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s»"«ENDIF»);
-			'''
+				'''
 		} else {
 			return '''
 			BsonDocument «dec.name» = Document.parse(«IF 
-				((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
+			((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
 			»
 			«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»
 			« ELSE » 
-				"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.replace("\\$", "$")»"«ENDIF»).toBsonDocument(BsonDocument.class, MongoClient.getDefaultCodecRegistry());
+			"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.replace("\\$", "$")»"«ENDIF»).toBsonDocument(BsonDocument.class, MongoClient.getDefaultCodecRegistry());
 			'''
 		}
 	}
