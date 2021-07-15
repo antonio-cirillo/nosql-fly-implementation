@@ -125,6 +125,86 @@ private static List <Column <?>> ___generateColumns(
 		
 }
 ```
+Inoltre, è stata aggiunta la funzione `__executeDistributedQuery` che ci permette di eseguire per tutte le collection all'interno del parametro `sourceList` la stessa medesima query (rappresentata dal parametro `query` che identifica l'istruzione e dal carattere `typeQuery` che identifica la tipologia di query da eseguire.
+```java
+@SuppressWarnings("unchecked")
+private static Object __executeDistributedQuery(char typeQuery, Object query, ArrayList <MongoCollection <Document>> sourceList) {
+	switch(typeQuery) {			
+		case 'S':
+			List <Table> __table = new ArrayList <> ();
+			for(MongoCollection <Document> source: sourceList) {
+				List <Table> __tmp = __generateTableFromNoSQLQuery(source.find((BsonDocument) query).cursor());
+				if(__table.size() == 0)
+					__table = __tmp;
+				else {
+					for(int i = 0; i < __table.size(); i++) {
+						boolean flag = false;
+					
+						for(int j = 0; j < __tmp.size(); j++) {										
+							if(__table.get(i).columnCount() == __tmp.get(j).columnCount()) {
+								// Se le colonne hanno lo stesso numero
+								Iterator <String> iterator = __table.get(i).columnNames().iterator();
+								Iterator <String> iteratorTmp = __tmp.get(j).columnNames().iterator();
+								
+								// Controllo se effettivamente le colonne sono uguali
+								int countIterator = 0;
+								int countColumns = __table.get(i).columnCount();
+								
+								while(iterator.hasNext()) {											
+									if(iterator.next().equals(iteratorTmp.next()))
+											countIterator++;
+									else break;											
+								}
+								
+								// Controllo sui contatori
+								if(countIterator == countColumns) { // Se sono uguali, le colonne sono uguali
+									__table.get(i).append(__tmp.get(j));
+									__tmp.remove(j); // Rimuovo la tabella appena aggiunta+
+									flag = true;
+									break;
+								} else { // Se non sono uguali, le colonne sono diverse, allora continuiamo
+									continue;
+								}																				
+							}																	
+						}
+						
+						if(flag) // Se sono uscito dal for precedente per un interruzione, vuol dire che una tabella presenta nella lista di ritorno è stata incrementata
+							continue;								
+					}
+					
+				__table.addAll(__tmp); // Tutte le tabelle che non possono essere incrementate, vengono aggiunte come nuove tabelle
+				
+				}
+			}
+			return __table;
+		
+		case 'D':
+			long countDelete = 0;
+			for(MongoCollection <Document> source: sourceList)
+				countDelete += source.deleteMany((BsonDocument) query).getDeletedCount();
+			return countDelete;
+		
+		case 'I':
+			for(MongoCollection <Document> source: sourceList)
+				source.insertMany((List <Document>) query);
+			return null;
+				
+		case 'U':
+			for(MongoCollection <Document> source: sourceList)
+				source.updateMany(((ArrayList<BsonDocument>) query).get(0), ((ArrayList<BsonDocument>) query).get(1));
+			return null;
+		
+		case 'R':
+			for(MongoCollection <Document> source: sourceList)
+				source.replaceOne(((ArrayList<BsonDocument>) query).get(0), Document.parse((((ArrayList<BsonDocument>) query).get(1).toJson())));
+			return null;
+		
+		default: 
+			return null;
+	}
+	
+}
+```
 All'interno della funzione `generateVariableDeclaration` è stato aggiunto il meccanismo di dichiarazione di variabili di tipo nosql.
 ```java
 case "nosql":{
@@ -187,8 +267,7 @@ case "nosql":{
 	}
 }
 ```
-Inoltre, sempre all'interno della funzione `generateVariableDeclaration` è stato modificato il funzionamento delle dichiarazioni di variabili di tipo  `query` in modo da adattarle 
-anche a query su database NoSQL.
+Inoltre, sempre all'interno della funzione `generateVariableDeclaration` è stato modificato il funzionamento delle dichiarazioni di variabili di tipo  `query` in modo da adattarle anche a query su database NoSQL.
 ```java
 case "query":{
 	var query_type = ((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
@@ -317,8 +396,134 @@ case "query":{
 	}
 }
 ```
-All'interno della funzione  `generateVariableFunction` è stato modificato il comportamento della funzione `execute` su variabili di tipo `query`, in modo da poter eseguire questo 
-comando su tutti i tipi di query applicabili ad un databse NoSQL.
+Inoltre, sempre all'interno della funzione `generateVariableDeclaration` è stata aggiunta la dichiarazione dell'oggetto `distributed-query` per poter effettuare appunto delle distributed-query su database NoSQL.
+```java
+case "distributed-query": {
+	var query_type = ((dec.right as DeclarationObject).features.get(1) as DeclarationFeature).value_s
+	if(query_type.equals("select")) {
+		typeSystem.get(scope).put(dec.name, "List <Table>")
+	} else if(query_type.equals("delete")) {
+		typeSystem.get(scope).put(dec.name, "long")
+	}
+	if(query_type.equals("select") || query_type.equals("delete")) {
+		var ret = ''''''
+		ret += '''
+		BsonDocument «dec.name» = Document.parse(«IF 
+			((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s.nullOrEmpty
+		»
+		«((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f.name»
+		« ELSE » 
+			"«((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s.replace("\\$", "$")»"«ENDIF»).toBsonDocument(BsonDocument.class, MongoClient.getDefaultCodecRegistry());
+							
+		ArrayList <MongoCollection <Document>> «dec.name»Source = new ArrayList <> ();
+		'''
+		for(i : 3 ..< (dec.right as DeclarationObject).features.size)					
+			ret += '''
+			«dec.name»Source.add(«((dec.right as DeclarationObject).features.get(i) as DeclarationFeature).value_f.name»);
+			'''
+		return ret;
+	} else if(query_type.equals("insert")) {
+		var ret = ''''''
+		if(((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s.nullOrEmpty) {
+			if((((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f as VariableDeclaration).right instanceof DeclarationObject) {
+				var variables = (((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f as VariableDeclaration).right as DeclarationObject
+				if(variables.features.get(0).value_s.equals("file")) {
+					ret += '''
+					List <Document> «dec.name» = new ArrayList <Document> ();
+					try (CSVReader ___CSVReader = new CSVReader(new FileReader(
+							«((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f.name»))) {
+						List <String[]> ___listOfArrayString = ___CSVReader.readAll();
+						String[] ___nosqlfeatures = ___listOfArrayString.get(0);
+						for(int ___indexOfReadingFromCSV = 1; ___indexOfReadingFromCSV < ___listOfArrayString.size(); ++___indexOfReadingFromCSV) {
+							Document ___dcmnt_tmp = new Document();
+							for(int ___indexOfReadingFromCSV2 = 0; ___indexOfReadingFromCSV2 < ___nosqlfeatures.length; ___indexOfReadingFromCSV2++) 
+								___dcmnt_tmp.append(___nosqlfeatures[___indexOfReadingFromCSV2], 
+										___listOfArrayString.get(___indexOfReadingFromCSV)[___indexOfReadingFromCSV2]); 
+							«dec.name».add(___dcmnt_tmp);
+						}
+					}
+										
+					ArrayList <MongoCollection <Document>> «dec.name»Source = new ArrayList <> ();
+					'''
+										
+					for(i : 3 ..< (dec.right as DeclarationObject).features.size)					
+						ret += '''
+						«dec.name»Source.add(«((dec.right as DeclarationObject).features.get(i) as DeclarationFeature).value_f.name»);
+						'''
+					return ret;
+				}
+			} else {
+				ret += '''
+				String ___«dec.name»Statement = «((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f.name»;
+				if(___«dec.name»Statement.charAt(0) != '[')
+					___«dec.name»Statement = "[" + ___«dec.name»Statement + "]";
+
+				org.json.JSONArray ___«dec.name»JsonArrayQuery = new org.json.JSONArray(___«dec.name»Statement);
+				List <Document> «dec.name» = new ArrayList <Document> ();
+
+				for(int ___indexForJsonArray = 0; ___indexForJsonArray < ___«dec.name»JsonArrayQuery.length(); ___indexForJsonArray++) 
+					«dec.name».add(Document.parse(___«dec.name»JsonArrayQuery.get(___indexForJsonArray).toString()));
+										
+				ArrayList <MongoCollection <Document>> «dec.name»Source = new ArrayList <> ();
+				'''
+									
+				for(i : 3 ..< (dec.right as DeclarationObject).features.size)					
+					ret += '''
+					«dec.name»Source.add(«((dec.right as DeclarationObject).features.get(i) as DeclarationFeature).value_f.name»);
+					'''
+				return ret;
+			}
+		} else {
+			ret += '''
+			String ___«dec.name»Statement = "«((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s»";
+			if(___«dec.name»Statement.charAt(0) != '[')
+				___«dec.name»Statement = "[" + ___«dec.name»Statement + "]";
+									org.json.JSONArray ___«dec.name»JsonArrayQuery = new org.json.JSONArray(___«dec.name»Statement);
+			List <Document> «dec.name» = new ArrayList <Document> ();
+
+			for(int ___indexForJsonArray = 0; ___indexForJsonArray < ___«dec.name»JsonArrayQuery.length(); ___indexForJsonArray++) 
+				«dec.name».add(Document.parse(___«dec.name»JsonArrayQuery.get(___indexForJsonArray).toString()));
+									
+			ArrayList <MongoCollection <Document>> «dec.name»Source = new ArrayList <> ();
+			'''
+																	
+			for(i : 3 ..< (dec.right as DeclarationObject).features.size)					
+				ret += '''
+				«dec.name»Source.add(«((dec.right as DeclarationObject).features.get(i) as DeclarationFeature).value_f.name»);
+				'''
+			return ret;
+		}
+	} else {
+		var ret = ''''''
+		ret += '''
+		BsonDocument «dec.name»_filter = Document.parse(«IF 
+			((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s.nullOrEmpty
+		»
+		«((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f.name»
+		« ELSE » 
+			"«((dec.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s.replace("\\$", "$")»"«ENDIF»).toBsonDocument(BsonDocument.class, MongoClient.getDefaultCodecRegistry());
+							
+		BsonDocument «dec.name» = Document.parse(«IF 
+			((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
+		»
+		«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»
+		« ELSE » 
+			"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.replace("\\$", "$")»"«ENDIF»).toBsonDocument(BsonDocument.class, MongoClient.getDefaultCodecRegistry());
+		ArrayList <MongoCollection <Document>> «dec.name»Source = new ArrayList <> ();
+		ArrayList <BsonDocument> «dec.name»Pair = new ArrayList <> ();
+		«dec.name»Pair.add(«dec.name»_filter);
+		«dec.name»Pair.add(«dec.name»);
+		'''
+																								
+		for(i : 4 ..< (dec.right as DeclarationObject).features.size)					
+			ret += '''
+			«dec.name»Source.add(«((dec.right as DeclarationObject).features.get(i) as DeclarationFeature).value_f.name»);
+			'''
+		return ret;	
+	}
+}
+```
+All'interno della funzione  `generateVariableFunction` è stato modificato il comportamento della funzione `execute` su variabili di tipo `query` e aggiunto il comportamento della funzione `execute` su variabili di tipo `distributed-query`, in modo da poter eseguire questo comando su tutti i tipi di query applicabili ad un databse NoSQL.
 ```java
 case "query":{
 	if(expression.feature.equals("execute")){
@@ -356,6 +561,32 @@ case "query":{
 			}
 		}
 	}					
+}
+case "distributed-query": {
+	if(expression.feature.equals("execute")) {
+		var queryType = (expression.target.right as DeclarationObject).features.get(1).value_s
+		if(queryType.equals("select")) {
+			return '''
+			(List <Table>) __executeDistributedQuery('S', «expression.target.name», «expression.target.name»Source);
+			'''
+		} else if(queryType.equals("delete")) {
+			return '''
+			(long) __executeDistributedQuery('D', «expression.target.name», «expression.target.name»Source);
+			'''				
+		} else if(queryType.equals("insert")) {
+			return '''
+			__executeDistributedQuery('I', «expression.target.name», «expression.target.name»Source);
+			'''
+		} else if(queryType.equals("update")) {
+			return '''
+			__executeDistributedQuery('U', «expression.target.name»Pair, «expression.target.name»Source);
+			'''
+		} else if(queryType.equals("replace")) {
+			return '''
+			__executeDistributedQuery('R', «expression.target.name»Pair, «expression.target.name»Source);
+			'''
+		}
+	}				
 }
 ```
 All'interno della funzione `generateLocalFlyFunction`.
@@ -429,7 +660,14 @@ else if (type.equals("query")){
 			return "long"
 		}
 	}
-} 
+} else if(type.equals("distributed-query")) {						
+	var queryType = (exp.target.right as DeclarationObject).features.get(1).value_s
+	if(queryType.equals("select")){
+		return "List <Table>"
+	} else {
+		return "long"
+	}							
+}
 ```
 All'interno del file `pom.xml` sono state aggiunte queste dipendenze:
 ```xml
