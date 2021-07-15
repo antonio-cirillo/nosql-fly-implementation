@@ -287,7 +287,7 @@ case "query":{
 					«dec.name».add(Document.parse(___«dec.name»JsonArrayQuery.get(___indexForJsonArray).toString()));
 				'''
 			}
-		} else if(query_type.equals("update")) { 
+		} else if(query_type.equals("update") || query_type.equals("replace")) { 
 			if((dec.right as DeclarationObject).features.size() == 5)
 				return '''
 				BsonDocument «dec.name»_filter = Document.parse(«IF 
@@ -304,23 +304,6 @@ case "query":{
 				« ELSE » 
 				"«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s.replace("\\$", "$")»"«ENDIF»).toBsonDocument(BsonDocument.class, MongoClient.getDefaultCodecRegistry());
 				'''	
-		} else if(query_type.equals("replace")) {
-			if((dec.right as DeclarationObject).features.size() == 5)
-				return '''
-				BsonDocument «dec.name»_filter = Document.parse(«IF 
-				((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.nullOrEmpty
-				»
-				«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_f.name»
-				« ELSE » 
-				"«((dec.right as DeclarationObject).features.get(3) as DeclarationFeature).value_s.replace("\\$", "$")»"«ENDIF»).toBsonDocument(BsonDocument.class, MongoClient.getDefaultCodecRegistry());
-															
-				Document «dec.name» = Document.parse(«IF 
-				((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s.nullOrEmpty
-				»
-				«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_f.name»
-				« ELSE » 
-				"«((dec.right as DeclarationObject).features.get(4) as DeclarationFeature).value_s»"«ENDIF»);
-				'''
 		} else {
 			return '''
 			BsonDocument «dec.name» = Document.parse(«IF 
