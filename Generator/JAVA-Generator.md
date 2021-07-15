@@ -352,7 +352,7 @@ case "query":{
 				«connection.name».updateMany(«expression.target.name»_filter, «expression.target.name»);'''
 			} else if(queryType.equals("replace")) {
 				return '''
-				«connection.name».replaceOne(«expression.target.name»_filter, «expression.target.name»);'''
+				«connection.name».replaceOne(«expression.target.name»_filter, Document.parse(«expression.target.name».toJson()));'''
 			}
 		}
 	}					
