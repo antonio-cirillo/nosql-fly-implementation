@@ -211,7 +211,7 @@ case "nosql": {
             if '«((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s»'[0] == '[' :
                 «exp.name» = json.loads('«((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s»')
             else:
-                «exp.name» = json.loads('[' + '«((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s»' + ']'
+                «exp.name» = json.loads('[' + '«((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s»' + ']')
                 
             '''
         }
@@ -237,6 +237,65 @@ case "nosql": {
         '''
             
         return ret								
+    } else if(query_type.equals("select")) {
+        typeSystem.get(scope).put(exp.name, "List <Table>")
+        var ret = ''''''
+        ret += '''
+        def __«exp.name»__():
+            sources = []
+        '''
+        for(i : 3 ..< (exp.right as DeclarationObject).features.size)	
+            ret += '''	sources.append(«((exp.right as DeclarationObject).features.get(i) as DeclarationFeature).value_f.name»)
+            '''
+         
+        ret +=
+        '''
+        #
+            features = []
+            objects = []
+            
+            for source in sources:
+                result = source.find(json.loads(«IF((exp.right as DeclarationObject).features.get(2).value_s.nullOrEmpty)
+                    »«((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_f.name»«
+                    ELSE
+                    »'«((exp.right as DeclarationObject).features.get(2) as DeclarationFeature).value_s»'«
+                    ENDIF»))
+                    
+                for value in result:
+                    feature = value.keys()
+                    i = 0
+                    for f in features:
+                        if f == feature:
+                            break
+                        else:
+                            i = i + 1
+                    
+                    if i + 1 > len(features):
+                        features.append(feature)
+                        objects.append([])
+                        objects[len(objects) - 1].append(value)
+                    else:
+                        objects[i].append(value)
+                        
+            df = []
+            for i in range(len(features)):
+                df.append(pd.DataFrame(objects[i]))
+                
+            return df
+        
+        '''
+        return ret
+    } else {
+        return '''
+        «exp.name»Filter = json.loads(«IF
+        ((exp.right as DeclarationObject).features.get(2).value_s.nullOrEmpty)»«(exp.right as DeclarationObject).features.get(2).value_f.name»«
+        ELSE»'«(exp.right as DeclarationObject).features.get(2).value_s»'«ENDIF»)
+        
+        «exp.name» = json.loads(«IF
+        ((exp.right as DeclarationObject).features.get(3).value_s.nullOrEmpty)»«(exp.right as DeclarationObject).features.get(3).value_f.name»«
+        ELSE»'«(exp.right as DeclarationObject).features.get(3).value_s»'«ENDIF»)
+        
+        '''
     }
 }
 ```
@@ -305,9 +364,34 @@ case "query":{
             __«expression.target.name»__()
             
             '''
+        } else if(queryType.equals("select")) {
+            return '''
+            __«expression.target.name»__()
+            
+            '''
+        } else if(queryType.equals("update")) {
+            var ret = ''''''
+            for(i : 4 ..< (expression.target.right as DeclarationObject).features.size)	
+                ret += '''
+                «((expression.target.right as DeclarationObject).features.get(i) as DeclarationFeature).value_f.name».update_many(«expression.target.name»Filter, «expression.target.name»)
+                '''
+            ret += '''
+
+            '''
+            return ret
+        } else if(queryType.equals("replace")) {
+            var ret = ''''''
+            for(i : 4 ..< (expression.target.right as DeclarationObject).features.size)	
+                ret += '''
+                «((expression.target.right as DeclarationObject).features.get(i) as DeclarationFeature).value_f.name».replace_one(«expression.target.name»Filter, «expression.target.name»)
+                '''
+            ret += '''
+
+            '''
+            return ret
         }
     }
-}			
+}		
 ```
 All'interno della funzione `generatePyForExpression`.
 ```python
