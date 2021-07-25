@@ -55,7 +55,7 @@ Mostriamo uno snippet di codice per intenderci meglio. Intendiamo aggiungere que
 ```
 La prima cosa da fare è stabilire la connessione al database NoSQL tramite l'inizializzazione di una variabile di tipo 'nosql':
 ```
-var studentCollection = [type = "nosql", database = "mydatabase", collection = "students"]
+var studentCollection = [type = "nosql", endpoint = "mongodb://127.0.0.1:27017", database = "mydatabase", collection = "students"]
 ```
 In questo modo ora abbiamo stabilito una connessione al database **mydatabase** su MongoDB, e possiamo effettuare operazioni CRUD sulla collection **students**. *Ricordiamo che non avendo specificato il path del nostro file log4j.properties, quest'ultimo verrà generato automaticamente con le proprietà di default sopra descritte, e verrà utilizzato per stabilire la connessione con il client MongoDB*.  
 Ora non ci resta che creare una nuova variabile di tipo `query` impostando i vari parametri opportunamente:
