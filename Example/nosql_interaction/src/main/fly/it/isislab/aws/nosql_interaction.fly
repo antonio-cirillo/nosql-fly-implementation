@@ -2,7 +2,7 @@ var Local = [type = "smp", nthread = 4 ]
 
 var Aws = [type = "aws", profile = "default", access_id_key = "", 
 	secret_access_key = "", 
-	region = "eu-west-2", language = "python3.6", nthread = 4, memory = 256, seconds = 300]
+	region = "eu-west-2", language = "nodejs12.x", nthread = 4, memory = 256, seconds = 300]
 
 // ================== TEST ALL OPERATION ================== //	
 func test() {
@@ -25,10 +25,9 @@ func test() {
 	insertStudents.execute()
 	
 	var filterUpdate = "{\\\"address.city\\\": \\\"Battipaglia\\\"}"
-
-	var statementUpdate = "{ \\\"$set\\\": {\\\"address.city\\\": \\\"Montecorvino Pugliano\\\", \\\"address.zip\\\": 84092} }"
 	
-	var update = [type = "query", query_type = "update", collection = nosql, filter = filterUpdate, statement = statementUpdate]
+	var update = [type = "query", query_type = "update", collection = nosql, filter = filterUpdate, 
+		statement = "{ \\\"$set\\\": {\\\"address.city\\\": \\\"Montecorvino Pugliano\\\", \\\"address.zip\\\": 84092} }"]
 	
 	update.execute()
 	
@@ -40,8 +39,6 @@ func test() {
 	var replace = [type = "query", query_type = "replace", collection = nosql, filter = filterReplace, statement = statementReplace]
 		
 	replace.execute()
-	
-	println "\\n Replace operation completed."
 }
 
 func select() {
