@@ -69,9 +69,9 @@ fly test in [0:1] on Aws thenall select
 
 // ================== TEST DELETE OPERATION ================== //
 func drop() {	
-	var nosql = [type = "nosql", client = "mongodb://79.37.54.131:27017", database = "mydb", collection = "weather"]
-	var nosql_2 = [type = "nosql", client = "mongodb://79.37.54.131:27017", database = "mydb", collection = "weather_2"]
-	var nosql_3 = [type = "nosql", client = "mongodb://79.37.54.131:27017", database = "mydb", collection = "weather_3"]	
+	var nosql = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather"]
+	var nosql_2 = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather_2"]
+	var nosql_3 = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather_3"]
 
 	var query = [type = "distributed-query", query_type = "delete", 
 		statement = "{ }", source_1 = nosql, source_2 = nosql_2, source_3 = nosql_3]
