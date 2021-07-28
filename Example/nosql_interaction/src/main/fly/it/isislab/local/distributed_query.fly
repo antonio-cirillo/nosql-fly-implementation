@@ -1,0 +1,105 @@
+var Local = [type = "smp", nthread= 4 ]
+
+// ================== TEST INSERT OPERATION ================== //	
+func insert() {
+	var nosql = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather"]
+	var nosql_2 = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather_2"]
+	var nosql_3 = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather_3"]	
+	
+	var statementInsertStudent = "{\\\"name\\\": \\\"Antonio\\\", \\\"surname\\\": \\\"Cirillo\\\", \\\"age\\\": 21, \\\"address\\\": "
+		+ "{\\\"city\\\": \\\"Battipaglia\\\", \\\"zip\\\": 84091, \\\"street\\\": \\\"Via Domodossola\\\"}, \\\"tel\\\": [\\\"333-xxxxxx\\\"]}"
+	
+	var insertStudent = [type = "distributed-query", query_type = "insert", 
+		statement = statementInsertStudent, source_1 = nosql, source_2 = nosql_2, source_3 = nosql_3]
+	
+	insertStudent.execute()
+	
+	var statementInsertStudents = "[{\\\"name\\\": \\\"Giovanni\\\", \\\"surname\\\": \\\"Rapa\\\", \\\"age\\\": 22, \\\"address\\\": "
+		+ "{\\\"city\\\": \\\"Giffoni V.P.\\\", \\\"zip\\\": 84095, \\\"street\\\": \\\"Via Italia\\\"}, \\\"tel\\\": [\\\"333-xxxxxxx\\\", \\\"335-xxxxxxx\\\"]}, "
+		+ "{\\\"name\\\": \\\"Mario\\\", \\\"surname\\\": \\\"De Riggi\\\", \\\"age\\\": 25, \\\"address\\\": {\\\"city\\\": \\\"Montecorvino Pugliano\\\", \\\"zip\\\": 84092, "
+		+ "\\\"street\\\": \\\"Via Roma\\\"}, \\\"tel\\\": [\\\"331-xxxxxxx\\\"]} ]"
+	
+	var insertStudents = [type = "distributed-query", query_type = "insert", 
+		statement = statementInsertStudents, source_1 = nosql, source_2 = nosql_2, source_3 = nosql_3]
+	
+	insertStudents.execute()
+}
+
+// ================== TEST SELECT OPERATION ================== //
+func select() {
+	var nosql = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather"]
+	var nosql_2 = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather_2"]
+	var nosql_3 = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather_3"]	
+	
+	var query = [type = "distributed-query", query_type = "select", 
+		statement = "{ }", source_1 = nosql, source_2 = nosql_2, source_3 = nosql_3]
+		
+	var result = query.execute()
+	
+	for table in result {
+		println "\\n" + table
+
+	}
+
+}
+
+fly insert in [0:1] on Local thenall select
+
+// ================== TEST UPDATE OPERATION ================== //
+func update() {
+	var nosql = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather"]
+	var nosql_2 = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather_2"]
+	var nosql_3 = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather_3"]	
+	
+	var filterUpdate = "{\\\"address.city\\\": \\\"Battipaglia\\\"}"
+
+	var statementUpdate = "{ \\\"$set\\\": {\\\"address.city\\\": \\\"Montecorvino Pugliano\\\", \\\"address.zip\\\": 84092} }"
+	
+	var update = [type = "distributed-query", query_type = "update", 
+		filter = filterUpdate, statement = statementUpdate, source_1 = nosql, source_2 = nosql_2, source_3 = nosql_3]
+	
+	update.execute()
+	
+	println "\\n Update operation completed."
+}
+
+fly update in [0:1] on Local thenall select
+
+// ================== TEST REPLACE OPERATION ================== //
+func replace() {
+	var nosql = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather"]
+	var nosql_2 = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather_2"]
+	var nosql_3 = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather_3"]	
+	
+	var filterReplace = "{\\\"name\\\": \\\"Giovanni\\\"}"
+	
+	var statementReplace = "{\\\"name\\\": \\\"Carmine\\\", \\\"surname\\\": \\\"Amendola\\\", \\\"age\\\": 28, \\\"address\\\": {\\\"city\\\": \\\"Montecorvino Pugliano\\\", "
+		+ "\\\"zip\\\": 84092, \\\"street\\\": \\\"Via Giovanni\\\"}, \\\"tel\\\": [\\\"392-xxxxxxx\\\", \\\"321-xxxxxxx\\\"]}"
+	
+	var replace = [type = "distributed-query", query_type = "replace", 
+		filter = filterReplace, statement = statementReplace, source_1 = nosql, source_2 = nosql_2, source_3 = nosql_3]
+		
+	replace.execute()
+	
+	println "\\n Replace operation completed."
+}
+
+fly replace in [0:1] on Local thenall select
+
+// ================== TEST DELETE OPERATION ================== //
+func drop() {	
+	var nosql = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather"]
+	var nosql_2 = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather_2"]
+	var nosql_3 = [type = "nosql", client = "mongodb://127.0.0.1:27017", database = "mydb", collection = "weather_3"]	
+
+	var query = [type = "distributed-query", query_type = "delete", 
+		statement = "{ }", source_1 = nosql, source_2 = nosql_2, source_3 = nosql_3]
+	
+	var result = query.execute()
+	
+	if(result > 0) {
+		println "\\nCollection dropped!"
+		println result + " elements was removed."
+	}
+}
+fly drop in [0:1] on Local
