@@ -15,3 +15,6 @@ FLY-MongoDB/rolePolicyDocument.json
 FLY-MongoDB/src-gen/MongoDBAws.java
 FLY-MongoDB/src/main/fly/it/unisa/MongoDBLocalScript.fly
 FLY-MongoDB/src-gen/MongoDBAWS.java
+FLY-MongoDB/src/main/fly/it/unisa/UseCase.fly
+FLY-MongoDB/src/main/fly/it/unisa/ImplementationTest.fly
+Example/nosql_interaction/src-gen/distributed_query.java
