@@ -5,6 +5,7 @@ allReqs.add("requests")
 ```
 All'interno della funzione `generateBodyPy`.
 ```python
+import requests
 from pymongo import MongoClient
 ```
 All'interno della funzione `generatePyExpression`.
