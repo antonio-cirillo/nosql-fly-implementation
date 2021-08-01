@@ -18,6 +18,11 @@ if [ -n "$(xmlstarlet sel -T -t -v "archetypeCatalogs/catalog[@location='$HOME/.
   if [ "true" = "$(xmlstarlet sel -T -t -v "archetypeCatalogs/catalog[@location='$HOME/.m2/repository/archetype-catalog.xml']/@enabled" archetypesInfo.xml)" ]; then
     echo "L'archetype già abilitato"
   else
+    xmlstarlet ed --inplace -s "/arcgetypeCatalogs" \
+    -t elem -n catalog -v "" \
+    -u "/archetypeCatalogs/catalog[@location='$HOME/.m2/repository/archetype-catalog.xml']/@enabled" \
+    -v true \
+    archetypesInfo.xml
     echo "L'archetype è stato abilitato"
   fi
 
