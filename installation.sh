@@ -1,3 +1,23 @@
+echo "Checking that git is installed"
+which git
+if [ $? -eq 0 ]; then
+  echo "git installed, continuing..."
+else
+  echo "sudo apt-get install git"
+  sudo apt-get install git
+fi
+
+echo "Checking that xmlstarlet is installed"
+which xmlstarlet
+if [ $? -eq 0 ]; then
+  echo "xmlstarlet installed, continuing..."
+else
+  echo "sudo apt-get install xmlstarlet"
+  sudo apt-get install xmlstarlet
+fi
+
+clear
+
 echo "Git clone della repository"
 git clone https://github.com/fly-language/fly-language.git
 
