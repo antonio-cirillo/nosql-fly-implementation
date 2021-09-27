@@ -1,5 +1,5 @@
 echo "Checking that git is installed"
-which git
+which git 
 if [ $? -eq 0 ]; then
   echo "git installed, continuing..."
 else
